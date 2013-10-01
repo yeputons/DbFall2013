@@ -1,7 +1,7 @@
-package net.yeputons.cscenter.DbFall2013.clients;
+package net.yeputons.cscenter.dbfall2013.clients;
 
-import net.yeputons.cscenter.DbFall2013.engines.DbEngine;
-import net.yeputons.cscenter.DbFall2013.engines.InMemoryEngine;
+import net.yeputons.cscenter.dbfall2013.engines.DbEngine;
+import net.yeputons.cscenter.dbfall2013.engines.InMemoryEngine;
 
 import java.nio.ByteBuffer;
 import java.util.Scanner;
