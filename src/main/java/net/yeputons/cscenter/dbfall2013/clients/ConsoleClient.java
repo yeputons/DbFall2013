@@ -54,7 +54,7 @@ public class ConsoleClient {
     }
 
     public static void main(String[] args) throws Exception {
-        DbEngine engine = new LogFileEngine(new File("storage.log"));
+        LogFileEngine engine = new LogFileEngine(new File("storage.log"));
 
         System.out.println("Welcome to " + ConsoleClient.class.getName() + "!");
         System.out.println("Type 'help' for help");
@@ -102,5 +102,7 @@ public class ConsoleClient {
             }
         }
         in.close();
+
+        engine.close();
     }
 }
