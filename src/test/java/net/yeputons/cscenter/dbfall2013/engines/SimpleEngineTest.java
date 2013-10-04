@@ -90,7 +90,7 @@ public class SimpleEngineTest {
         assertEquals(str2Buf("test0"), engine.get(str2Buf("ab")));
         checkSize(2);
 
-        engine.remove(str2Buf("a"));
+        assertEquals(str2Buf("test2"), engine.remove(str2Buf("a")));
         assertEquals(null, engine.get(str2Buf("a")));
         assertEquals(str2Buf("test0"), engine.get(str2Buf("ab")));
         checkSize(1);
