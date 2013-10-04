@@ -70,21 +70,21 @@ public class SimpleEngineTest {
         assertEquals(engine.isEmpty(), true);
         assertEquals(engine.keySet().size(), engine.size());
 
-        engine.put(str2Buf("a"), str2Buf("test"));
+        assertEquals(engine.put(str2Buf("a"), str2Buf("test")), null);
         assertEquals(engine.get(str2Buf("a")), str2Buf("test"));
         assertEquals(engine.get(str2Buf("ab")), null);
         assertEquals(engine.size(), 1);
         assertEquals(engine.isEmpty(), false);
         assertEquals(engine.keySet().size(), engine.size());
 
-        engine.put(str2Buf("ab"), str2Buf("test0"));
+        assertEquals(engine.put(str2Buf("ab"), str2Buf("test0")), null);
         assertEquals(engine.get(str2Buf("a")), str2Buf("test"));
         assertEquals(engine.get(str2Buf("ab")), str2Buf("test0"));
         assertEquals(engine.size(), 2);
         assertEquals(engine.isEmpty(), false);
         assertEquals(engine.keySet().size(), engine.size());
 
-        engine.put(str2Buf("a"), str2Buf("test2"));
+        assertEquals(engine.put(str2Buf("a"), str2Buf("test2")), str2Buf("test"));
         assertEquals(engine.get(str2Buf("a")), str2Buf("test2"));
         assertEquals(engine.get(str2Buf("ab")), str2Buf("test0"));
         assertEquals(engine.size(), 2);
@@ -98,7 +98,14 @@ public class SimpleEngineTest {
         assertEquals(engine.isEmpty(), false);
         assertEquals(engine.keySet().size(), engine.size());
 
-        engine.remove(str2Buf("ab"));
+        assertEquals(engine.remove(str2Buf("ab")), str2Buf("test0"));
+        assertEquals(engine.get(str2Buf("a")), null);
+        assertEquals(engine.get(str2Buf("ab")), null);
+        assertEquals(engine.size(), 0);
+        assertEquals(engine.isEmpty(), true);
+        assertEquals(engine.keySet().size(), engine.size());
+
+        assertEquals(engine.remove(str2Buf("ab")), null);
         assertEquals(engine.get(str2Buf("a")), null);
         assertEquals(engine.get(str2Buf("ab")), null);
         assertEquals(engine.size(), 0);
