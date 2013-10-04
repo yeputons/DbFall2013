@@ -31,6 +31,8 @@ public class InMemoryEngine extends SimpleEngine {
 
     @Override
     public ByteBuffer put(ByteBuffer key, ByteBuffer value) {
+        if (key == null || value == null)
+            throw new NullPointerException("key and value should not be nulls");
         return data.put(key, value);
     }
 

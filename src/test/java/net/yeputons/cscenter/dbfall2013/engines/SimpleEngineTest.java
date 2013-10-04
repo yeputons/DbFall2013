@@ -46,6 +46,21 @@ public class SimpleEngineTest {
         assertEquals(engine.size(), engine.entrySet().size());
     }
 
+    @Test(expected = NullPointerException.class)
+    public void putNullKeyTest() {
+        engine.put(null, str2Buf("value"));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void putNullValueTest() {
+        engine.put(str2Buf("key"), null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void putNullBothTest() {
+        engine.put(null, null);
+    }
+
     @Test
     public void equalsTest() {
         Map<ByteBuffer, ByteBuffer> map = new HashMap<ByteBuffer, ByteBuffer>();
