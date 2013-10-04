@@ -39,6 +39,13 @@ public class SimpleEngineTest {
         return Arrays.asList(data);
     }
 
+    protected void checkSize(int expectedSize) {
+        assertEquals(expectedSize, engine.size());
+        assertEquals(expectedSize == 0, engine.isEmpty());
+        assertEquals(engine.size(), engine.keySet().size());
+        assertEquals(engine.size(), engine.entrySet().size());
+    }
+
     @Test
     public void equalsTest() {
         Map<ByteBuffer, ByteBuffer> map = new HashMap<ByteBuffer, ByteBuffer>();
@@ -66,50 +73,36 @@ public class SimpleEngineTest {
     public void basicTest() {
         assertEquals(engine.get(str2Buf("a")), null);
         assertEquals(engine.get(str2Buf("ab")), null);
-        assertEquals(engine.size(), 0);
-        assertEquals(engine.isEmpty(), true);
-        assertEquals(engine.keySet().size(), engine.size());
+        checkSize(0);
 
         assertEquals(engine.put(str2Buf("a"), str2Buf("test")), null);
         assertEquals(engine.get(str2Buf("a")), str2Buf("test"));
         assertEquals(engine.get(str2Buf("ab")), null);
-        assertEquals(engine.size(), 1);
-        assertEquals(engine.isEmpty(), false);
-        assertEquals(engine.keySet().size(), engine.size());
+        checkSize(1);
 
         assertEquals(engine.put(str2Buf("ab"), str2Buf("test0")), null);
         assertEquals(engine.get(str2Buf("a")), str2Buf("test"));
         assertEquals(engine.get(str2Buf("ab")), str2Buf("test0"));
-        assertEquals(engine.size(), 2);
-        assertEquals(engine.isEmpty(), false);
-        assertEquals(engine.keySet().size(), engine.size());
+        checkSize(2);
 
         assertEquals(engine.put(str2Buf("a"), str2Buf("test2")), str2Buf("test"));
         assertEquals(engine.get(str2Buf("a")), str2Buf("test2"));
         assertEquals(engine.get(str2Buf("ab")), str2Buf("test0"));
-        assertEquals(engine.size(), 2);
-        assertEquals(engine.isEmpty(), false);
-        assertEquals(engine.keySet().size(), engine.size());
+        checkSize(2);
 
         engine.remove(str2Buf("a"));
         assertEquals(engine.get(str2Buf("a")), null);
         assertEquals(engine.get(str2Buf("ab")), str2Buf("test0"));
-        assertEquals(engine.size(), 1);
-        assertEquals(engine.isEmpty(), false);
-        assertEquals(engine.keySet().size(), engine.size());
+        checkSize(1);
 
         assertEquals(engine.remove(str2Buf("ab")), str2Buf("test0"));
         assertEquals(engine.get(str2Buf("a")), null);
         assertEquals(engine.get(str2Buf("ab")), null);
-        assertEquals(engine.size(), 0);
-        assertEquals(engine.isEmpty(), true);
-        assertEquals(engine.keySet().size(), engine.size());
+        checkSize(0);
 
         assertEquals(engine.remove(str2Buf("ab")), null);
         assertEquals(engine.get(str2Buf("a")), null);
         assertEquals(engine.get(str2Buf("ab")), null);
-        assertEquals(engine.size(), 0);
-        assertEquals(engine.isEmpty(), true);
-        assertEquals(engine.keySet().size(), engine.size());
+        checkSize(0);
     }
 }
