@@ -13,6 +13,7 @@ import java.nio.channels.FileChannel;
  */
 public class LogFileEngine extends InMemoryEngine {
     protected File storage;
+    protected DataOutputStream logOut;
 
     protected void loadFromStorage() throws IOException {
         if (!storage.exists()) return;
@@ -43,28 +44,30 @@ public class LogFileEngine extends InMemoryEngine {
     }
 
     protected void checkStorageExistence() throws IOException {
-        if (storage.exists()) return;
-        storage.createNewFile();
-
-        DataOutputStream log = new DataOutputStream(new FileOutputStream(storage));
-        log.writeInt(0);
-        log.close();
+        if (!storage.exists()) {
+            storage.createNewFile();
+            DataOutputStream log = new DataOutputStream(new FileOutputStream(storage));
+            log.writeInt(0);
+            log.close();
+        }
+        if (logOut == null) {
+            logOut = new DataOutputStream(new FileOutputStream(storage, true));
+        }
     }
+
     protected void appendToLog(ByteBuffer key, ByteBuffer value) {
         try {
             checkStorageExistence();
-            // Open for append
-            DataOutputStream log = new DataOutputStream(new FileOutputStream(storage, true));
-            log.writeInt(key.limit());
-            log.write(key.array());
+            logOut.writeInt(key.limit());
+            logOut.write(key.array());
 
             if (value != null) {
-                log.writeInt(value.limit());
-                log.write(value.array());
+                logOut.writeInt(value.limit());
+                logOut.write(value.array());
             } else {
-                log.writeInt(-1);
+                logOut.writeInt(-1);
             }
-            log.close();
+            logOut.flush();
 
             RandomAccessFile out = new RandomAccessFile(storage, "rw");
             out.seek(0);
@@ -80,6 +83,12 @@ public class LogFileEngine extends InMemoryEngine {
     public LogFileEngine(File storage) throws IOException {
         this.storage = storage;
         loadFromStorage();
+    }
+    public void close() {
+        try {
+            logOut.close();
+        } catch (IOException e) {
+        }
     }
 
     @Override
