@@ -28,11 +28,11 @@ public class LogFileEngine extends InMemoryEngine {
 
             int dataLen = log.readInt();
             if (dataLen == -1) {
-                remove(ByteBuffer.wrap(key));
+                super.remove(ByteBuffer.wrap(key));
             } else {
                 byte[] data = new byte[dataLen];
                 log.readFully(data);
-                put(ByteBuffer.wrap(key), ByteBuffer.wrap(data));
+                super.put(ByteBuffer.wrap(key), ByteBuffer.wrap(data));
             }
         }
         long totalBytes = in.getChannel().position();
