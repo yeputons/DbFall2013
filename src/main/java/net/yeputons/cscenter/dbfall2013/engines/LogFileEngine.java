@@ -13,7 +13,7 @@ import java.nio.channels.FileChannel;
  */
 public class LogFileEngine extends InMemoryEngine {
     protected File storage;
-    protected DataOutputStream logOut;
+    protected RandomAccessFile logOut;
 
     protected void loadFromStorage() throws IOException {
         if (!storage.exists()) return;
@@ -51,13 +51,14 @@ public class LogFileEngine extends InMemoryEngine {
             log.close();
         }
         if (logOut == null) {
-            logOut = new DataOutputStream(new FileOutputStream(storage, true));
+            logOut = new RandomAccessFile(storage, "rws");
         }
     }
 
     protected void appendToLog(ByteBuffer key, ByteBuffer value) {
         try {
             checkStorageExistence();
+            logOut.seek(logOut.length());
             logOut.writeInt(key.limit());
             logOut.write(key.array());
 
@@ -67,14 +68,11 @@ public class LogFileEngine extends InMemoryEngine {
             } else {
                 logOut.writeInt(-1);
             }
-            logOut.flush();
 
-            RandomAccessFile out = new RandomAccessFile(storage, "rw");
-            out.seek(0);
-            int oldSize = out.readInt();
-            out.seek(0);
-            out.writeInt(oldSize + 1);
-            out.close();
+            logOut.seek(0);
+            int oldSize = logOut.readInt();
+            logOut.seek(0);
+            logOut.writeInt(oldSize + 1);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -85,14 +83,17 @@ public class LogFileEngine extends InMemoryEngine {
         loadFromStorage();
     }
     public void close() {
+        if (logOut == null) return;
         try {
             logOut.close();
+            logOut = null;
         } catch (IOException e) {
         }
     }
 
     @Override
     public void clear() {
+        close();
         // This method does not throw an exception even if
         // the log does not exist
         storage.delete();
