@@ -4,6 +4,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,9 +34,12 @@ public class SimpleEngineTest {
     }
 
     @Parameterized.Parameters
-    public static java.util.Collection<Object[]> data() {
+    public static java.util.Collection<Object[]> data() throws IOException {
+        File storage = File.createTempFile("test-storage", ".log");
+        storage.delete();
         Object[][] data = new Object[][] {
-                { new InMemoryEngine() }
+                { new InMemoryEngine() },
+                { new LogFileEngine(storage) }
         };
         return Arrays.asList(data);
     }

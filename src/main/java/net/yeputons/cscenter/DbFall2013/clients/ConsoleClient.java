@@ -2,7 +2,9 @@ package net.yeputons.cscenter.dbfall2013.clients;
 
 import net.yeputons.cscenter.dbfall2013.engines.DbEngine;
 import net.yeputons.cscenter.dbfall2013.engines.InMemoryEngine;
+import net.yeputons.cscenter.dbfall2013.engines.LogFileEngine;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Scanner;
 
@@ -51,8 +53,8 @@ public class ConsoleClient {
         return ByteBuffer.wrap(res.toString().getBytes());
     }
 
-    public static void main(String[] args) {
-        DbEngine engine = new InMemoryEngine();
+    public static void main(String[] args) throws Exception {
+        DbEngine engine = new LogFileEngine(new File("storage.log"));
 
         System.out.println("Welcome to " + ConsoleClient.class.getName() + "!");
         System.out.println("Type 'help' for help");
