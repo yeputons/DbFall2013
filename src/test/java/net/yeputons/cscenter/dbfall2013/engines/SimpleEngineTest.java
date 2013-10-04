@@ -6,8 +6,11 @@ import org.junit.runners.Parameterized;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 
 /**
  * Created with IntelliJ IDEA.
@@ -34,6 +37,29 @@ public class SimpleEngineTest {
                 { new InMemoryEngine() }
         };
         return Arrays.asList(data);
+    }
+
+    @Test
+    public void equalsTest() {
+        Map<ByteBuffer, ByteBuffer> map = new HashMap<ByteBuffer, ByteBuffer>();
+        Map<ByteBuffer, ByteBuffer> map2 = new HashMap<ByteBuffer, ByteBuffer>();
+
+        map2.put(str2Buf("a"), str2Buf("b"));
+
+        assertEquals(engine, map);
+        assertNotSame(engine, map2);
+
+        engine.put(str2Buf("a"), str2Buf("a"));
+        assertNotSame(engine, map);
+        assertNotSame(engine, map2);
+
+        engine.put(str2Buf("a"), str2Buf("b"));
+        assertNotSame(engine, map);
+        assertEquals(engine, map2);
+
+        engine.remove(str2Buf("a"));
+        assertEquals(engine, map);
+        assertNotSame(engine, map2);
     }
 
     @Test

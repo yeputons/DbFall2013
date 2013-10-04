@@ -23,7 +23,9 @@ public abstract class SimpleEngine implements DbEngine {
 
     @Override
     public boolean containsValue(Object value) {
-        throw new UnsupportedOperationException("DbEngine does not support containsValue method");
+        for (Entry<ByteBuffer, ByteBuffer> entry : entrySet())
+            if (entry.getValue().equals(value)) return true;
+        return false;
     }
 
     @Override
@@ -46,5 +48,18 @@ public abstract class SimpleEngine implements DbEngine {
         for (ByteBuffer key : keySet())
             result.add(new AbstractMap.SimpleEntry<ByteBuffer, ByteBuffer>(key, get(key)));
         return result;
+    }
+
+    @Override
+    public int hashCode() {
+        return entrySet().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (o == null) return false;
+        if (!(o instanceof Map)) return false;
+        return entrySet().equals(((Map) o).entrySet());
     }
 }
