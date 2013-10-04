@@ -53,56 +53,56 @@ public class SimpleEngineTest {
 
         map2.put(str2Buf("a"), str2Buf("b"));
 
-        assertEquals(engine, map);
-        assertNotSame(engine, map2);
+        assertEquals(map, engine);
+        assertNotSame(map2, engine);
 
         engine.put(str2Buf("a"), str2Buf("a"));
-        assertNotSame(engine, map);
-        assertNotSame(engine, map2);
+        assertNotSame(map, engine);
+        assertNotSame(map2, engine);
 
         engine.put(str2Buf("a"), str2Buf("b"));
-        assertNotSame(engine, map);
-        assertEquals(engine, map2);
+        assertNotSame(map, engine);
+        assertEquals(map2, engine);
 
         engine.remove(str2Buf("a"));
-        assertEquals(engine, map);
-        assertNotSame(engine, map2);
+        assertEquals(map, engine);
+        assertNotSame(map2, engine);
     }
 
     @Test
     public void basicTest() {
-        assertEquals(engine.get(str2Buf("a")), null);
-        assertEquals(engine.get(str2Buf("ab")), null);
+        assertEquals(null, engine.get(str2Buf("a")));
+        assertEquals(null, engine.get(str2Buf("ab")));
         checkSize(0);
 
-        assertEquals(engine.put(str2Buf("a"), str2Buf("test")), null);
-        assertEquals(engine.get(str2Buf("a")), str2Buf("test"));
-        assertEquals(engine.get(str2Buf("ab")), null);
+        assertEquals(null, engine.put(str2Buf("a"), str2Buf("test")));
+        assertEquals(str2Buf("test"), engine.get(str2Buf("a")));
+        assertEquals(null, engine.get(str2Buf("ab")));
         checkSize(1);
 
-        assertEquals(engine.put(str2Buf("ab"), str2Buf("test0")), null);
-        assertEquals(engine.get(str2Buf("a")), str2Buf("test"));
-        assertEquals(engine.get(str2Buf("ab")), str2Buf("test0"));
+        assertEquals(null, engine.put(str2Buf("ab"), str2Buf("test0")));
+        assertEquals(str2Buf("test"), engine.get(str2Buf("a")));
+        assertEquals(str2Buf("test0"), engine.get(str2Buf("ab")));
         checkSize(2);
 
-        assertEquals(engine.put(str2Buf("a"), str2Buf("test2")), str2Buf("test"));
-        assertEquals(engine.get(str2Buf("a")), str2Buf("test2"));
-        assertEquals(engine.get(str2Buf("ab")), str2Buf("test0"));
+        assertEquals(str2Buf("test"), engine.put(str2Buf("a"), str2Buf("test2")));
+        assertEquals(str2Buf("test2"), engine.get(str2Buf("a")));
+        assertEquals(str2Buf("test0"), engine.get(str2Buf("ab")));
         checkSize(2);
 
         engine.remove(str2Buf("a"));
-        assertEquals(engine.get(str2Buf("a")), null);
-        assertEquals(engine.get(str2Buf("ab")), str2Buf("test0"));
+        assertEquals(null, engine.get(str2Buf("a")));
+        assertEquals(str2Buf("test0"), engine.get(str2Buf("ab")));
         checkSize(1);
 
-        assertEquals(engine.remove(str2Buf("ab")), str2Buf("test0"));
-        assertEquals(engine.get(str2Buf("a")), null);
-        assertEquals(engine.get(str2Buf("ab")), null);
+        assertEquals(str2Buf("test0"), engine.remove(str2Buf("ab")));
+        assertEquals(null, engine.get(str2Buf("a")));
+        assertEquals(null, engine.get(str2Buf("ab")));
         checkSize(0);
 
-        assertEquals(engine.remove(str2Buf("ab")), null);
-        assertEquals(engine.get(str2Buf("a")), null);
-        assertEquals(engine.get(str2Buf("ab")), null);
+        assertEquals(null, engine.remove(str2Buf("ab")));
+        assertEquals(null, engine.get(str2Buf("a")));
+        assertEquals(null, engine.get(str2Buf("ab")));
         checkSize(0);
     }
 }
