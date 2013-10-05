@@ -51,7 +51,7 @@ public class LogFileEngine extends InMemoryEngine {
             log.close();
         }
         if (logOut == null) {
-            logOut = new RandomAccessFile(storage, "rws");
+            logOut = new RandomAccessFile(storage, "rw");
         }
     }
 
@@ -81,6 +81,10 @@ public class LogFileEngine extends InMemoryEngine {
     public LogFileEngine(File storage) throws IOException {
         this.storage = storage;
         loadFromStorage();
+    }
+    public void flush() throws IOException {
+        if (logOut == null) return;
+        logOut.getFD().sync();
     }
     public void close() {
         if (logOut == null) return;
