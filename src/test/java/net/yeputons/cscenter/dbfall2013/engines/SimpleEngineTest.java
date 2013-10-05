@@ -127,5 +127,20 @@ public class SimpleEngineTest {
         assertEquals(null, engine.get(str2Buf("a")));
         assertEquals(null, engine.get(str2Buf("ab")));
         checkSize(0);
+
+        assertEquals(null, engine.put(str2Buf("ab"), str2Buf("test3")));
+        assertEquals(null, engine.get(str2Buf("a")));
+        assertEquals(str2Buf("test3"), engine.get(str2Buf("ab")));
+        checkSize(1);
+
+        assertEquals(str2Buf("test3"), engine.remove(str2Buf("ab")));
+        assertEquals(null, engine.get(str2Buf("a")));
+        assertEquals(null, engine.get(str2Buf("ab")));
+        checkSize(0);
+
+        assertEquals(null, engine.remove(str2Buf("ab")));
+        assertEquals(null, engine.get(str2Buf("a")));
+        assertEquals(null, engine.get(str2Buf("ab")));
+        checkSize(0);
     }
 }
