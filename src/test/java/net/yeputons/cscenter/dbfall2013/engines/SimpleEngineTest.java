@@ -35,11 +35,14 @@ public class SimpleEngineTest {
 
     @Parameterized.Parameters
     public static java.util.Collection<Object[]> data() throws IOException {
-        File storage = File.createTempFile("test-storage", ".log");
-        storage.delete();
+        File storage1 = File.createTempFile("test-storage", ".log");
+        File storage2 = File.createTempFile("test-storage", ".log");
+        storage1.delete();
+        storage2.delete();
         Object[][] data = new Object[][] {
                 { new InMemoryEngine() },
-                { new LogFileEngine(storage) }
+                { new LogFileEngine(storage1) },
+                { new HashTrieEngine(storage2) }
         };
         return Arrays.asList(data);
     }
