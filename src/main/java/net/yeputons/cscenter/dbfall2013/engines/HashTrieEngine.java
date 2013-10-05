@@ -16,7 +16,7 @@ import java.util.Set;
  * Time: 20:59
  * To change this template use File | Settings | File Templates.
  */
-public class HashTrieEngine extends SimpleEngine {
+public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine {
     protected File storage;
     protected RandomAccessFile data;
     protected final static MessageDigest md;
@@ -45,9 +45,11 @@ public class HashTrieEngine extends SimpleEngine {
         this.storage = storage;
         openStorage();
     }
+    @Override
     public void flush() throws IOException {
         data.getFD().sync();
     }
+    @Override
     public void close() throws IOException {
         data.close();
     }

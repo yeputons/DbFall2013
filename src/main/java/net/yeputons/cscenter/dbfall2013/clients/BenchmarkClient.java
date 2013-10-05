@@ -3,6 +3,7 @@ package net.yeputons.cscenter.dbfall2013.clients;
 import net.yeputons.cscenter.dbfall2013.engines.LogFileEngine;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
@@ -28,7 +29,11 @@ public class BenchmarkClient {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-                engine.close();
+                try {
+                    engine.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }));
         for (int step = 1;; step++) {

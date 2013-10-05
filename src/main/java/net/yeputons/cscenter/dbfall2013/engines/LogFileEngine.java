@@ -11,7 +11,7 @@ import java.nio.channels.FileChannel;
  * Time: 13:10
  * To change this template use File | Settings | File Templates.
  */
-public class LogFileEngine extends InMemoryEngine {
+public class LogFileEngine extends InMemoryEngine implements FileStorableDbEngine {
     protected File storage;
     protected RandomAccessFile logOut;
 
@@ -82,22 +82,25 @@ public class LogFileEngine extends InMemoryEngine {
         this.storage = storage;
         loadFromStorage();
     }
+    @Override
     public void flush() throws IOException {
         if (logOut == null) return;
         logOut.getFD().sync();
     }
-    public void close() {
+    @Override
+    public void close() throws IOException {
         if (logOut == null) return;
-        try {
-            logOut.close();
-            logOut = null;
-        } catch (IOException e) {
-        }
+        logOut.close();
+        logOut = null;
     }
 
     @Override
     public void clear() {
-        close();
+        try {
+            close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         // This method does not throw an exception even if
         // the log does not exist
         storage.delete();
