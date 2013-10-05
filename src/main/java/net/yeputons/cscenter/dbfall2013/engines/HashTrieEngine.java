@@ -171,10 +171,14 @@ public class HashTrieEngine extends SimpleEngine {
                     ptr = nptr;
                 } else {
                     ByteBuffer oldVal = null;
-                    if (nptr < data.length()) {
-                        byte[] buf = new byte[data.readInt()];
-                        data.read(buf);
-                        oldVal = ByteBuffer.wrap(buf);
+                    if (nptr > 0 && nptr < data.length()) {
+                        data.seek(nptr);
+                        int valueLen = data.readInt();
+                        if (valueLen != -1) {
+                            byte[] buf = new byte[valueLen];
+                            data.read(buf);
+                            oldVal = ByteBuffer.wrap(buf);
+                        }
                     }
 
                     nptr = (int)data.length();
@@ -186,9 +190,11 @@ public class HashTrieEngine extends SimpleEngine {
                     data.writeInt(key.array().length);
                     data.write(key.array());
 
-                    currentSize += 1;
-                    data.seek(0);
-                    data.writeInt(currentSize);
+                    if (oldVal == null) {
+                        currentSize += 1;
+                        data.seek(0);
+                        data.writeInt(currentSize);
+                    }
                     return oldVal;
                 }
             }
