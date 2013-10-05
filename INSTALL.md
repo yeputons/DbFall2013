@@ -6,9 +6,7 @@ To build this homework, you need the following to be installed in your system:
 2. Apache Maven
 
 If you think you're ready, run the following commands from the root directory of this probject:
-1. mvn test
-   This command should finish with 'BUILD SUCCESS' message. If not, something went wrong
 1. mvn package
-   This command should finish with 'BUILD SUCCESS' message too.
+   This command should finish with 'BUILD SUCCESS' message. 17 tests should be run, 1 of them should be skipped
 2. cd target
 3. java -jar net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar
