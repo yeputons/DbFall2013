@@ -1,6 +1,7 @@
 package net.yeputons.cscenter.dbfall2013.clients;
 
 import net.yeputons.cscenter.dbfall2013.engines.DbEngine;
+import net.yeputons.cscenter.dbfall2013.engines.HashTrieEngine;
 import net.yeputons.cscenter.dbfall2013.engines.InMemoryEngine;
 import net.yeputons.cscenter.dbfall2013.engines.LogFileEngine;
 
@@ -54,7 +55,8 @@ public class ConsoleClient {
     }
 
     public static void main(String[] args) throws Exception {
-        LogFileEngine engine = new LogFileEngine(new File("storage.log"));
+        HashTrieEngine engine = new HashTrieEngine(new File("storage.trie"));
+        //LogFileEngine engine = new LogFileEngine(new File("storage.log"));
 
         System.out.println("Welcome to " + ConsoleClient.class.getName() + "!");
         System.out.println("Type 'help' for help");
