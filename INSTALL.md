@@ -14,8 +14,10 @@ Either method 1:
 
 Or method 2:
   1. mvn compile
-     This command should finish with 'BUILD SUCCESS' message. 17 tests should be run, 1 of them should be skipped
-  2. mvn exec:java
+     This command should finish with 'BUILD SUCCESS' message.
+  2. mvn test
+     17 tests should be run, 1 of them should be skipped
+  3. mvn exec:java
 
 == Usage
 
