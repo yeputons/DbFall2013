@@ -7,6 +7,7 @@ import net.yeputons.cscenter.dbfall2013.engines.LogFileEngine;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -31,7 +32,10 @@ public class ConsoleClient {
                 "  del <key> - deletes the corresponding record\n" +
                 "All keys are case-sensetive. All keys and data are treated as sequences of bytes.\n" +
                 "If you need to put space or backslash to your key/data use escaping: '\\_' for space,\n" +
-                "and '\\\\' for backslash. '\\n' '\\r' are also available\n"
+                "and '\\\\' for backslash. '\\n' '\\r' are also available\n" +
+                "\n" +
+                "You can also run this application with '--batch' option which disables\n" +
+                "interactivity stuff (like greeting and >>>)\n"
         );
     }
 
@@ -56,16 +60,24 @@ public class ConsoleClient {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean batchMode = false;
+        if (Arrays.asList(args).contains("--batch"))
+            batchMode = true;
+
         HashTrieEngine engine = new HashTrieEngine(new File("storage.trie"));
         //LogFileEngine engine = new LogFileEngine(new File("storage.log"));
 
-        System.out.println("Welcome to " + ConsoleClient.class.getName() + "!");
-        System.out.println("Type 'help' for help");
+        if (!batchMode) {
+            System.out.println("Welcome to " + ConsoleClient.class.getName() + "!");
+            System.out.println("Type 'help' for help");
+        }
 
         Scanner in = new Scanner(System.in);
         boolean quit = false;
         while (!quit) {
-            System.out.print(">>> ");
+            if (!batchMode) {
+                System.out.print(">>> ");
+            }
             String line;
             try {
                 line = in.nextLine();
