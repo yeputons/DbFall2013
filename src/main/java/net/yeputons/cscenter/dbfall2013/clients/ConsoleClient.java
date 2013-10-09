@@ -7,6 +7,7 @@ import net.yeputons.cscenter.dbfall2013.engines.LogFileEngine;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 /**
@@ -65,7 +66,12 @@ public class ConsoleClient {
         boolean quit = false;
         while (!quit) {
             System.out.print(">>> ");
-            String line = in.nextLine();
+            String line;
+            try {
+                line = in.nextLine();
+            } catch (NoSuchElementException e) {
+                break;
+            }
             if (line.isEmpty()) continue;
 
             if (line.equals("quit")) {
