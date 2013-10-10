@@ -71,6 +71,8 @@ public abstract class FileStorableDbEngineTest {
                 real.remove(key);
             }
 
+            assertEquals(engine.size(), engine.keySet().size());
+            assertEquals(engine.size(), engine.entrySet().size());
             assertEquals(real, engine);
         }
     }
