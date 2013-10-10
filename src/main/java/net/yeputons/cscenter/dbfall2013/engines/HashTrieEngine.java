@@ -107,17 +107,23 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         try {
             TrieNode node = TrieNode.createFromFile(data, 4);
 
-            for (int i = 0; i < hash.length && !(node instanceof LeafNode); i++) {
-                int ptr = ((InnerNode)node).next[hash[i] & 0xFF];
+            int hashPtr = 0;
+            while (!(node instanceof LeafNode)) {
+                int ptr = ((InnerNode)node).next[hash[hashPtr] & 0xFF];
                 if (ptr == 0) throw new NoSuchElementException();
                 node = TrieNode.createFromFile(data, ptr);
+                hashPtr++;
             }
+
             LeafNode leaf = (LeafNode)node;
             if (leaf.value == null)
                 throw new NoSuchElementException();
 
             if (!leaf.key.equals(key)) {
                 byte[] hash2 = md.digest(leaf.key.array());
+                for (int i = 0; i < hashPtr; i++)
+                    assert(hash[i] == hash2[i]);
+                if (hashPtr < hash.length) throw new NoSuchElementException();
                 assert hash.equals(hash2);
                 throw new RuntimeException("SHA-1 collision!");
             }
@@ -189,10 +195,41 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
                     throw new RuntimeException("SHA-1 collision!");
 
                 currentSize += 1;
-                throw new AssertionError("fuck");
-                /*byte[] hash2 = md.digest(leaf.key);
-                InnerNode newInner = InnerNode.addToFile(data);
-                parent.setNext(parentC, newInner.offset);*/
+                if (leaf.value == null) {
+                    LeafNode newLeaf = LeafNode.addToFile(data, key, value);
+                    parent.setNext(parentC, newLeaf.offset);
+                    return null;
+                }
+                {
+                    LeafNode tmp = getNode(leaf.key);
+                    assert(tmp.value.equals(leaf.value));
+                }
+
+                byte[] hash2 = md.digest(leaf.key.array());
+                for (int i = 0; i < hashPtr; i++)
+                    assert(hash[i] == hash2[i]);
+                while (true) {
+                    InnerNode newInner = InnerNode.addToFile(data);
+                    parent.setNext(parentC, newInner.offset);
+
+                    parent = newInner;
+                    int c1 = hash[hashPtr] & 0xFF, c2 = hash2[hashPtr] & 0xFF;
+                    if (c1 != c2) break;
+
+                    parentC = c1;
+                    hashPtr++;
+                }
+                parent.setNext(hash2[hashPtr] & 0xFF, leaf.offset);
+
+                LeafNode newLeaf = LeafNode.addToFile(data, key, value);
+                parent.setNext(hash[hashPtr] & 0xFF, newLeaf.offset);
+
+                LeafNode tmp = getNode(key);
+                assert(tmp.value.equals(value));
+
+                tmp = getNode(leaf.key);
+                assert(tmp.value.equals(leaf.value));
+                return null;
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
