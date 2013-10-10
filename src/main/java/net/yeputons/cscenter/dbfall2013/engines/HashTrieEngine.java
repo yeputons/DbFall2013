@@ -3,6 +3,7 @@ package net.yeputons.cscenter.dbfall2013.engines;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
@@ -34,9 +35,12 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     protected void openStorage() throws IOException {
         data = new RandomAccessFile(storage, "rw");
         if (data.length() == 0) {
-            data.writeInt(0);
-            for (int i = 0; i < 256; i++)
-                data.writeInt(0);
+            data.writeInt(1);
+            InnerNode.addToFile(data);
+        } else {
+            int ver = data.readInt();
+            if (ver != 1)
+                throw new IOException("Invalid DB version: expected 1, found " + ver);
         }
         currentSize = keySet().size();
     }
@@ -65,34 +69,26 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         }
     }
 
-    private void keySet(int ptr, int depth, Set<ByteBuffer> keySet) throws IOException {
-        data.seek(ptr);
-        if (depth == MD_LEN) {
-            int valLen = data.readInt();
-            if (valLen == -1) return;
-            data.skipBytes(valLen);
-
-            int keyLen = data.readInt();
-            byte[] key = new byte[keyLen];
-            data.read(key);
-            keySet.add(ByteBuffer.wrap(key));
+    private void keySet(int ptr, Set<ByteBuffer> keySet) throws IOException {
+        TrieNode node = TrieNode.createFromFile(data, ptr);
+        if (node instanceof LeafNode) {
+            LeafNode leaf = (LeafNode)node;
+            if (leaf.value == null) return;
+            keySet.add(leaf.key);
             return;
         }
 
-        int[] ptrs = new int[256];
-        for (int i = 0; i < ptrs.length; i++) {
-            ptrs[i] = data.readInt();
-        }
-        for (int i = 0; i < ptrs.length; i++)
-            if (ptrs[i] != 0)
-                keySet(ptrs[i], depth + 1, keySet);
+        InnerNode inner = (InnerNode)node;
+        for (int i = 0; i < inner.next.length; i++)
+            if (inner.next[i] != 0)
+                keySet(inner.next[i], keySet);
     }
 
     @Override
     public Set<ByteBuffer> keySet() {
         Set<ByteBuffer> keySet = new HashSet<ByteBuffer>();
         try {
-            keySet(4, 0, keySet);
+            keySet(4, keySet);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -104,24 +100,28 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         return currentSize;
     }
 
-    protected int getNode(ByteBuffer key) {
-        int ptr = 4;
+    protected LeafNode getNode(ByteBuffer key) {
         byte[] hash = md.digest(key.array());
         assert hash.length == MD_LEN;
 
         try {
-            for (int i = 0; i < hash.length; i++) {
-                int cur = hash[i] & 0xFF;
-                data.seek(ptr + 4 * cur);
-                int nptr = data.readInt();
-                if (nptr == 0) throw new NoSuchElementException();
-                ptr = nptr;
-            }
+            TrieNode node = TrieNode.createFromFile(data, 4);
 
-            data.seek(ptr);
-            if (data.readInt() == -1)
+            for (int i = 0; i < hash.length && !(node instanceof LeafNode); i++) {
+                int ptr = ((InnerNode)node).next[hash[i] & 0xFF];
+                if (ptr == 0) throw new NoSuchElementException();
+                node = TrieNode.createFromFile(data, ptr);
+            }
+            LeafNode leaf = (LeafNode)node;
+            if (leaf.value == null)
                 throw new NoSuchElementException();
-            return ptr;
+
+            if (!leaf.key.equals(key)) {
+                byte[] hash2 = md.digest(leaf.key.array());
+                assert hash.equals(hash2);
+                throw new RuntimeException("SHA-1 collision!");
+            }
+            return leaf;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -133,13 +133,8 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         ByteBuffer key = (ByteBuffer)_key;
 
         try {
-            int ptr = getNode(key);
-            data.seek(ptr);
-            byte[] res = new byte[data.readInt()];
-            data.read(res);
-            return ByteBuffer.wrap(res);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            LeafNode leaf = getNode(key);
+            return leaf.value;
         } catch (NoSuchElementException e) {
             return null;
         }
@@ -152,55 +147,53 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
 
         byte[] hash = md.digest(key.array());
         assert hash.length == MD_LEN;
-        int ptr = 4;
 
         try {
-            for (int i = 0; i < hash.length; i++) {
-                int cur = hash[i] & 0xFF;
-                if (ptr == data.length()) {
-                    data.seek(ptr);
-                    for (int i2 = 0; i2 < 256; i2++)
-                        data.writeInt(0);
-                }
-                data.seek(ptr + 4 * cur);
-                int nptr = data.readInt();
-                if (i + 1 < hash.length) {
-                    if (nptr == 0) {
-                        nptr = (int)data.length();
-                        data.seek(ptr + 4 * cur);
-                        data.writeInt(nptr);
-                    }
-                    ptr = nptr;
+            TrieNode node = TrieNode.createFromFile(data, 4);
+            InnerNode parent = null;
+            int parentC = -1;
+            int hashPtr = 0;
+            while (!(node instanceof LeafNode)) {
+                InnerNode inner = (InnerNode)node;
+                int c = hash[hashPtr] & 0xFF;
+
+                parent = inner;
+                parentC = c;
+                if (inner.next[c] != 0) {
+                    node = TrieNode.createFromFile(data, inner.next[c]);
                 } else {
-                    ByteBuffer oldVal = null;
-                    if (nptr > 0 && nptr < data.length()) {
-                        data.seek(nptr);
-                        int valueLen = data.readInt();
-                        if (valueLen != -1) {
-                            byte[] buf = new byte[valueLen];
-                            data.read(buf);
-                            oldVal = ByteBuffer.wrap(buf);
-                        }
-                    }
-
-                    nptr = (int)data.length();
-                    data.seek(ptr + 4 * cur);
-                    data.writeInt(nptr);
-                    data.seek(nptr);
-                    data.writeInt(value.array().length);
-                    data.write(value.array());
-                    data.writeInt(key.array().length);
-                    data.write(key.array());
-
-                    if (oldVal == null) {
-                        currentSize += 1;
-                        data.seek(0);
-                        data.writeInt(currentSize);
-                    }
-                    return oldVal;
+                    LeafNode leaf = LeafNode.addToFile(data, key, value);
+                    inner.setNext(c, leaf.offset);
+                    node = leaf;
+                    currentSize += 1;
+                    return null;
                 }
+                hashPtr++;
             }
-            throw new AssertionError("Reached end of function");
+
+            LeafNode leaf = (LeafNode)node;
+            if (leaf.key.equals(key)) {
+                ByteBuffer oldValue = leaf.value;
+                try {
+                    leaf.setValue(value);
+                } catch (ValueIsBiggerThanOldException e) {
+                    LeafNode newLeaf = LeafNode.addToFile(data, key, value);
+                    parent.setNext(parentC, newLeaf.offset);
+                }
+                if (oldValue == null) {
+                    currentSize += 1;
+                }
+                return oldValue;
+            } else {
+                if (hashPtr >= hash.length)
+                    throw new RuntimeException("SHA-1 collision!");
+
+                currentSize += 1;
+                throw new AssertionError("fuck");
+                /*byte[] hash2 = md.digest(leaf.key);
+                InnerNode newInner = InnerNode.addToFile(data);
+                parent.setNext(parentC, newInner.offset);*/
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -210,19 +203,12 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     public ByteBuffer remove(Object _key) {
         ByteBuffer key = (ByteBuffer)_key;
         try {
-            int ptr = getNode(key);
-            data.seek(ptr);
-            byte[] old = new byte[data.readInt()];
-            data.read(old);
-
-            data.seek(ptr);
-            data.writeInt(-1);
-
+            LeafNode leaf = getNode(key);
+            ByteBuffer oldValue = leaf.value;
+            leaf.setValue(null);
             currentSize -= 1;
-            data.seek(0);
-            data.writeInt(currentSize);
-            return ByteBuffer.wrap(old);
-        } catch (IOException e){
+            return oldValue;
+        } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (NoSuchElementException e) {
             return null;
