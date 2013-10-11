@@ -18,15 +18,15 @@ abstract class TrieNode {
     public static final int NODE_LEAF = 2;
 
     protected HugeMappedFile buf;
-    protected int offset;
+    protected long offset;
 
-    protected TrieNode(HugeMappedFile buf, int offset) {
+    protected TrieNode(HugeMappedFile buf, long offset) {
         this.buf = buf;
         this.offset = offset;
     }
 
 
-    public static TrieNode createFromFile(HugeMappedFile buf, int offset) throws IOException {
+    public static TrieNode createFromFile(HugeMappedFile buf, long offset) throws IOException {
         byte type = buf.get(offset);
         switch (type) {
             case NODE_INNER:

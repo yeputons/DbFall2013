@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
 public class LeafNode extends TrieNode {
     public ByteBuffer key, value;
 
-    public LeafNode(HugeMappedFile buf, int offset) throws IOException {
+    public LeafNode(HugeMappedFile buf, long offset) throws IOException {
         super(buf, offset);
 
         buf.position(offset + 1);
@@ -36,7 +36,7 @@ public class LeafNode extends TrieNode {
         return 1 + 4 + value.limit() + 4 + key.limit();
     }
 
-    public static LeafNode writeToBuffer(HugeMappedFile buf, int offset, ByteBuffer key, ByteBuffer value) throws IOException {
+    public static LeafNode writeToBuffer(HugeMappedFile buf, long offset, ByteBuffer key, ByteBuffer value) throws IOException {
         buf.position(offset);
         buf.put((byte)NODE_LEAF);
         buf.putInt(value.limit());
