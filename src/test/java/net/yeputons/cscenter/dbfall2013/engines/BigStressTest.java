@@ -1,6 +1,7 @@
 package net.yeputons.cscenter.dbfall2013.engines;
 
 import net.yeputons.cscenter.dbfall2013.engines.hashtrie.HashTrieEngine;
+import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -22,7 +23,7 @@ import static org.junit.Assert.assertNotSame;
  */
 public class BigStressTest {
     FileStorableDbEngine engine;
-    final int ELEMENTS = 30000;
+    final int ELEMENTS = 800000;
     final int KEY_SIZE = 10;
     final int VALUE_SIZE = 1024;
 
@@ -53,13 +54,20 @@ public class BigStressTest {
         Random rnd = new Random();
         int[] order = new int[ELEMENTS];
 
-        System.err.println("Putting values...");
+        long startTime;
+
+        StopWatch timer = new StopWatch();
+        timer.start();
+
         ByteBuffer key = ByteBuffer.allocate(KEY_SIZE);
         ByteBuffer value = ByteBuffer.allocate(VALUE_SIZE);
         for (int i = 0; i < ELEMENTS; i++) {
             genBuf(key, i, KEY_P);
             genBuf(value, i, VALUE_P);
             engine.put(ByteBuffer.wrap(key.array()), ByteBuffer.wrap(value.array()));
+            if (i % 50000 == 0) {
+                System.err.printf("[ put ] %s: %d/%d\n", timer.toString(), i + 1, ELEMENTS);
+            }
         }
 
         // Shuffling order of check
@@ -73,12 +81,16 @@ public class BigStressTest {
             }
         }
 
-        System.err.println("Checking...");
+        timer.reset();
+        timer.start();
         for (int i = 0; i < ELEMENTS; i++) {
             int x = order[i];
             genBuf(key, x, KEY_P);
             genBuf(value, x, VALUE_P);
             assertEquals(value, engine.get(ByteBuffer.wrap(key.array())));
+            if (i % 50000 == 0) {
+                System.err.printf("[check] %s: %d/%d\n", timer.toString(), i + 1, ELEMENTS);
+            }
         }
     }
 
