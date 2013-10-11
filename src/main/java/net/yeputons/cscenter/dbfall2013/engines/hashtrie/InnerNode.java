@@ -1,7 +1,6 @@
-package net.yeputons.cscenter.dbfall2013.engines;
+package net.yeputons.cscenter.dbfall2013.engines.hashtrie;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
 

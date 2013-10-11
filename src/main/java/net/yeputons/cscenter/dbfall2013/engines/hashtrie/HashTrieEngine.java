@@ -1,4 +1,7 @@
-package net.yeputons.cscenter.dbfall2013.engines;
+package net.yeputons.cscenter.dbfall2013.engines.hashtrie;
+
+import net.yeputons.cscenter.dbfall2013.engines.FileStorableDbEngine;
+import net.yeputons.cscenter.dbfall2013.engines.SimpleEngine;
 
 import java.io.*;
 import java.nio.ByteBuffer;

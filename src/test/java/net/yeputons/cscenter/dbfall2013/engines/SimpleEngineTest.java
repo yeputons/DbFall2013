@@ -1,5 +1,6 @@
 package net.yeputons.cscenter.dbfall2013.engines;
 
+import net.yeputons.cscenter.dbfall2013.engines.hashtrie.HashTrieEngine;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

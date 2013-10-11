@@ -1,5 +1,6 @@
 package net.yeputons.cscenter.dbfall2013.engines;
 
+import net.yeputons.cscenter.dbfall2013.engines.hashtrie.HashTrieEngine;
 import org.junit.Ignore;
 
 import java.io.IOException;

@@ -1,8 +1,7 @@
 package net.yeputons.cscenter.dbfall2013.clients;
 
 import net.yeputons.cscenter.dbfall2013.engines.FileStorableDbEngine;
-import net.yeputons.cscenter.dbfall2013.engines.HashTrieEngine;
-import net.yeputons.cscenter.dbfall2013.engines.LogFileEngine;
+import net.yeputons.cscenter.dbfall2013.engines.hashtrie.HashTrieEngine;
 
 import java.io.File;
 import java.io.IOException;
