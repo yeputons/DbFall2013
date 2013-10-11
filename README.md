@@ -42,3 +42,31 @@ First 4 bytes: length of key (int32).
 Next bytes: the key itself
 Next 4 bytes: length of value (int32). It can be -1 too, which means 'remove this key from DB'.
 Next bytes: the value itself
+
+== HashTrieEngine
+
+This engine stores trie (prefix tree) of keys' SHA1 hashes. Each node may have up to 256 children
+and maximal depth of such trie is at most 160/8 = 20 edges.
+
+There are two types of nodes: inner and leaf. Inner node contains links to its children, while leaf
+node contains one pair: (key, value). Value can be null which means 'this pair was deleted'.
+
+If inner node contains only one leaf in its subtree, all unnecessary inner nodes are not stored.
+Therefore, depth of particular leafs can be less than 20 and can even change during DB work.
+
+Storage file is preallocated to be mmap() usable. If it becomes too small to hold
+all the date, its size is increased twice.
+
+Storage format:
+First 4 bytes - signature. {'Y', 'D', 'B', 1} as for now
+Next 4 bytes - current length of 'busy' part of the file (which was used)
+
+After that descriptions of nodes follow. Root node is always presented at offset 8 and it's always inner.
+
+First byte of each node's specification is its type:
+1. Inner node has type=1. After that 256 int32 values follow - offsets of children of this inner node.
+   Unexisting child is represented by offset zero, which is invalid offset.
+2. Leaf node has type=2. Then its value's length follows (in bytes or -1 for null). Then the value
+   goes itself, then key's length, then the key.
+
+Content of the unsued part of storage is undefined and is not used.
