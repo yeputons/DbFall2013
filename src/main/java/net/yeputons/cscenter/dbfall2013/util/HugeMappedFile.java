@@ -96,14 +96,14 @@ public class HugeMappedFile {
 
     public long getLong(long position) {
         long res = 0;
-        res |= (get(position + 0) & 0xFF) << 56;
-        res |= (get(position + 1) & 0xFF) << 48;
-        res |= (get(position + 2) & 0xFF) << 40;
-        res |= (get(position + 3) & 0xFF) << 32;
-        res |= (get(position + 4) & 0xFF) << 24;
-        res |= (get(position + 5) & 0xFF) << 16;
-        res |= (get(position + 6) & 0xFF) <<  8;
-        res |= (get(position + 7) & 0xFF) <<  0;
+        res |= ((long)(get(position + 0) & 0xFF)) << 56;
+        res |= ((long)(get(position + 1) & 0xFF)) << 48;
+        res |= ((long)(get(position + 2) & 0xFF)) << 40;
+        res |= ((long)(get(position + 3) & 0xFF)) << 32;
+        res |= ((long)(get(position + 4) & 0xFF)) << 24;
+        res |= ((long)(get(position + 5) & 0xFF)) << 16;
+        res |= ((long)(get(position + 6) & 0xFF)) <<  8;
+        res |= ((long)(get(position + 7) & 0xFF)) <<  0;
         return res;
     }
     public void putLong(long position, long value) {
