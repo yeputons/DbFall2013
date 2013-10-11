@@ -16,49 +16,49 @@ import java.security.InvalidParameterException;
 public class LeafNode extends TrieNode {
     public ByteBuffer key, value;
 
-    public LeafNode(RandomAccessFile file, int offset) throws IOException {
-        super(file, offset);
+    public LeafNode(ByteBuffer buf, int offset) throws IOException {
+        super(buf, offset);
 
-        file.seek(offset + 1);
-        int valueLen = file.readInt();
+        buf.position(offset + 1);
+        int valueLen = buf.getInt();
         if (valueLen == -1) {
             value = null;
         } else {
             value = ByteBuffer.allocate(valueLen);
-            file.read(value.array());
+            buf.get(value.array());
         }
 
-        int keyLen = file.readInt();
+        int keyLen = buf.getInt();
         key = ByteBuffer.allocate(keyLen);
-        file.read(key.array());
+        buf.get(key.array());
     }
 
     public static int estimateSize(ByteBuffer key, ByteBuffer value) {
         return 1 + 4 + value.limit() + 4 + key.limit();
     }
 
-    public static LeafNode writeToFile(RandomAccessFile file, int offset, ByteBuffer key, ByteBuffer value) throws IOException {
-        file.seek(offset);
-        file.writeByte(NODE_LEAF);
-        file.writeInt(value.limit());
-        file.write(value.array());
-        file.writeInt(key.limit());
-        file.write(key.array());
-        return new LeafNode(file, offset);
+    public static LeafNode writeToBuffer(ByteBuffer buf, int offset, ByteBuffer key, ByteBuffer value) throws IOException {
+        buf.position(offset);
+        buf.put((byte)NODE_LEAF);
+        buf.putInt(value.limit());
+        buf.put(value.array());
+        buf.putInt(key.limit());
+        buf.put(key.array());
+        return new LeafNode(buf, offset);
     }
 
     void setValue(ByteBuffer newValue) throws IOException {
         if (newValue != null && (value == null || newValue.limit() > value.limit()))
             throw new ValueIsBiggerThanOldException();
-        file.seek(offset + 1);
+        buf.position(offset + 1);
         if (newValue != null) {
-            file.writeInt(newValue.limit());
-            file.write(newValue.array());
+            buf.putInt(newValue.limit());
+            buf.put(newValue.array());
         } else {
-            file.writeInt(-1);
+            buf.putInt(-1);
         }
-        file.writeInt(key.limit());
-        file.write(key.array());
+        buf.putInt(key.limit());
+        buf.put(key.array());
         value = newValue;
     }
 }

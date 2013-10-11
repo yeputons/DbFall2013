@@ -2,6 +2,7 @@ package net.yeputons.cscenter.dbfall2013.engines;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
 
 /**
@@ -14,35 +15,31 @@ import java.security.InvalidParameterException;
 public class InnerNode extends TrieNode {
     int[] next;
 
-    public InnerNode(RandomAccessFile file, int offset) throws IOException {
-        super(file, offset);
+    public InnerNode(ByteBuffer buf, int offset) throws IOException {
+        super(buf, offset);
 
-        this.file = file;
-        this.offset = offset;
-
-        file.seek(offset + 1);
+        buf.position(offset + 1);
         next = new int[256];
         for (int i = 0; i < next.length; i++)
-            next[i] = file.readInt();
+            next[i] = buf.getInt();
     }
 
     public static int estimateSize() {
         return 1 + 256 * 4;
     }
 
-    public static InnerNode writeToFile(RandomAccessFile file, int offset) throws IOException {
-        file.seek(offset);
-        file.writeByte(NODE_INNER);
+    public static InnerNode writeToBuffer(ByteBuffer buf, int offset) throws IOException {
+        buf.position(offset);
+        buf.put((byte)NODE_INNER);
         for (int i = 0; i < 256; i++)
-            file.writeInt(0);
-        return new InnerNode(file, offset);
+            buf.putInt(0);
+        return new InnerNode(buf, offset);
     }
 
     public void setNext(int c, int newOffset) throws IOException {
         if (!(0 <= c && c < 256))
             throw new InvalidParameterException("c should be between 0 and 255");
-        file.seek(offset + 1 + c * 4);
-        file.writeInt(newOffset);
+        buf.putInt(offset + 1 + c * 4, newOffset);
         next[c] = newOffset;
     }
 }
