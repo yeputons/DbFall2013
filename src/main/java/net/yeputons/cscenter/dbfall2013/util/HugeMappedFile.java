@@ -17,7 +17,7 @@ public class HugeMappedFile {
     static final int MAP_STEP = 1 << MAP_STEP_K;
     static final int MAP_STEP_MSK = MAP_STEP - 1;
     protected FileChannel ch;
-    protected ArrayList<MappedByteBuffer> bufs;
+    protected MappedByteBuffer[] bufs;
     protected long currentPosition;
 
     public HugeMappedFile(FileChannel ch) throws IOException {
@@ -27,29 +27,24 @@ public class HugeMappedFile {
     }
 
     void updateMapping() throws IOException {
-        bufs = new ArrayList<MappedByteBuffer>();
+        bufs = new MappedByteBuffer[(int)((ch.size() + MAP_STEP - 1) / MAP_STEP)];
+        int ptr = 0;
         for (long i = 0; i < ch.size();) {
             long size = Math.min(MAP_STEP, ch.size() - i);
-            bufs.add(ch.map(FileChannel.MapMode.READ_WRITE, i, size));
+            bufs[ptr] = ch.map(FileChannel.MapMode.READ_WRITE, i, size);
             i += size;
+            ptr++;
         }
+        assert ptr == bufs.length;
     }
 
     public void force() {
-        for (int i = 0; i < bufs.size(); i++)
-            bufs.get(i).force();
+        for (int i = 0; i < bufs.length; i++)
+            bufs[0].force();
     }
 
     protected MappedByteBuffer getMap(long position) {
-        long mapId = position >> MAP_STEP_K;
-        if (mapId < 0 || mapId >= bufs.size())
-            throw new IndexOutOfBoundsException();
-
-        long inMapPos = position & (MAP_STEP_MSK - 1);
-        assert inMapPos >= 0;
-        if (inMapPos >= bufs.get((int)mapId).limit())
-            throw new IndexOutOfBoundsException();
-        return bufs.get((int)mapId);
+        return bufs[(int)(position >> MAP_STEP_K)];
     }
 
     public byte get(long position) {
@@ -60,12 +55,26 @@ public class HugeMappedFile {
     }
 
     private void get(long position, byte[] value) {
-        for (int i = 0; i < value.length; i++)
-            value[i] = get(position + i);
+        int i = 0;
+        while (i < value.length) {
+            long startPos = position;
+            long endPos = Math.min(startPos + value.length - i, (startPos | MAP_STEP_MSK) + 1);
+            MappedByteBuffer buf = getMap(endPos);
+            buf.position((int)(position & MAP_STEP_MSK));
+            buf.get(value, i, (int)(endPos - startPos));
+            i += endPos - startPos;
+        }
     }
     private void put(long position, byte[] value) {
-        for (int i = 0; i < value.length; i++)
-            put(position + i, value[i]);
+        int i = 0;
+        while (i < value.length) {
+            long startPos = position;
+            long endPos = Math.min(startPos + value.length - i, (startPos | MAP_STEP_MSK) + 1);
+            MappedByteBuffer buf = getMap(endPos);
+            buf.position((int)(position & MAP_STEP_MSK));
+            buf.put(value, i, (int)(endPos - startPos));
+            i += endPos - startPos;
+        }
     }
 
     private int getInt(long position) {
