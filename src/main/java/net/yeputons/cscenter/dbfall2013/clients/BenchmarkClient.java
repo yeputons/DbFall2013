@@ -1,5 +1,7 @@
 package net.yeputons.cscenter.dbfall2013.clients;
 
+import net.yeputons.cscenter.dbfall2013.engines.FileStorableDbEngine;
+import net.yeputons.cscenter.dbfall2013.engines.HashTrieEngine;
 import net.yeputons.cscenter.dbfall2013.engines.LogFileEngine;
 
 import java.io.File;
@@ -19,7 +21,7 @@ public class BenchmarkClient {
         File f = File.createTempFile("benchmark", ".log");
         f.delete();
 
-        final LogFileEngine engine = new LogFileEngine(f);
+        final FileStorableDbEngine engine = new HashTrieEngine(f);
 
         long startTime = System.currentTimeMillis();
         byte[] key = new byte[10];
