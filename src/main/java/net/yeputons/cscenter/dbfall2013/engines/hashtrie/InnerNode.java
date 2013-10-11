@@ -1,5 +1,7 @@
 package net.yeputons.cscenter.dbfall2013.engines.hashtrie;
 
+import net.yeputons.cscenter.dbfall2013.util.HugeMappedFile;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
@@ -14,7 +16,7 @@ import java.security.InvalidParameterException;
 public class InnerNode extends TrieNode {
     int[] next;
 
-    public InnerNode(ByteBuffer buf, int offset) throws IOException {
+    public InnerNode(HugeMappedFile buf, int offset) throws IOException {
         super(buf, offset);
 
         buf.position(offset + 1);
@@ -27,7 +29,7 @@ public class InnerNode extends TrieNode {
         return 1 + 256 * 4;
     }
 
-    public static InnerNode writeToBuffer(ByteBuffer buf, int offset) throws IOException {
+    public static InnerNode writeToBuffer(HugeMappedFile buf, int offset) throws IOException {
         buf.position(offset);
         buf.put((byte)NODE_INNER);
         for (int i = 0; i < 256; i++)

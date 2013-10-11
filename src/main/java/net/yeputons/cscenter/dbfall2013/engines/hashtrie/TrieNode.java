@@ -1,5 +1,7 @@
 package net.yeputons.cscenter.dbfall2013.engines.hashtrie;
 
+import net.yeputons.cscenter.dbfall2013.util.HugeMappedFile;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
@@ -15,16 +17,16 @@ abstract class TrieNode {
     public static final int NODE_INNER = 1;
     public static final int NODE_LEAF = 2;
 
-    protected ByteBuffer buf;
+    protected HugeMappedFile buf;
     protected int offset;
 
-    protected TrieNode(ByteBuffer buf, int offset) {
+    protected TrieNode(HugeMappedFile buf, int offset) {
         this.buf = buf;
         this.offset = offset;
     }
 
 
-    public static TrieNode createFromFile(ByteBuffer buf, int offset) throws IOException {
+    public static TrieNode createFromFile(HugeMappedFile buf, int offset) throws IOException {
         byte type = buf.get(offset);
         switch (type) {
             case NODE_INNER:

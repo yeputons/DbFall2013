@@ -2,6 +2,7 @@ package net.yeputons.cscenter.dbfall2013.engines.hashtrie;
 
 import net.yeputons.cscenter.dbfall2013.engines.FileStorableDbEngine;
 import net.yeputons.cscenter.dbfall2013.engines.SimpleEngine;
+import net.yeputons.cscenter.dbfall2013.util.HugeMappedFile;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -24,7 +25,7 @@ import java.util.Set;
 public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine {
     protected File storage;
     protected RandomAccessFile dataFile;
-    protected MappedByteBuffer data;
+    protected HugeMappedFile data;
     protected int dataUsedLength;
 
     protected final static MessageDigest md;
@@ -67,12 +68,12 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             dataFile.write(SIGNATURE);
             dataFile.writeInt(dataUsedLength);
 
-            data = dataFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, dataFile.length());
+            data = new HugeMappedFile(dataFile.getChannel());
 
             int offset = appendToStorage(InnerNode.estimateSize());
             InnerNode.writeToBuffer(data, offset);
         } else {
-            data = dataFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, dataFile.length());
+            data = new HugeMappedFile(dataFile.getChannel());
             byte[] readSig = new byte[SIGNATURE.length];
             data.get(readSig);
             if (!Arrays.equals(SIGNATURE, readSig))
@@ -287,7 +288,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         int res = dataUsedLength;
         while (dataUsedLength + size > dataFile.length()) {
             dataFile.setLength(2 * dataFile.length());
-            data = dataFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, dataFile.length());
+            data = new HugeMappedFile(dataFile.getChannel());
         }
         dataUsedLength += size;
         data.putInt(USED_LENGTH_OFFSET, dataUsedLength);
