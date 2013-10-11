@@ -9,6 +9,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -31,6 +32,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     protected int currentSize;
 
     protected final int SIGNATURE_OFFSET = 0;
+    protected final byte[] SIGNATURE = { 'Y', 'D', 'B', 1 };
     protected final int USED_LENGTH_OFFSET = 4;
     protected final int ROOT_NODE_OFFSET = 8;
 
@@ -46,7 +48,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         dataFile = new RandomAccessFile(storage, "rw");
         if (dataFile.length() == 0) {
             dataUsedLength = 8;
-            dataFile.writeInt(1);
+            dataFile.write(SIGNATURE);
             dataFile.writeInt(dataUsedLength);
 
             data = dataFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, dataFile.length());
@@ -55,9 +57,10 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             InnerNode.writeToBuffer(data, offset);
         } else {
             data = dataFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, dataFile.length());
-            int ver = data.getInt();
-            if (ver != 1)
-                throw new IOException("Invalid DB version: expected 1, found " + ver);
+            byte[] readSig = new byte[SIGNATURE.length];
+            data.get(readSig);
+            if (!Arrays.equals(SIGNATURE, readSig))
+                throw new IOException("Invalid DB signature");
             dataUsedLength = data.getInt();
         }
         if (dataUsedLength > dataFile.length())
