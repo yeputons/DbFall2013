@@ -23,7 +23,7 @@ public class ConsoleClient {
                 "  help  - displays this help\n" +
                 "  clear - removes all records\n" +
                 "  size  - prints number of records\n" +
-                "  keys  - prints keys of all records\n" +
+                "  keys  - prints keys of all records (available for collections of <=20 items only)\n" +
                 "  put <key> <value> - adds a new record or updates an old one\n" +
                 "  get <key> - prints value of the corresponding record\n" +
                 "  del <key> - deletes the corresponding record\n" +
@@ -92,9 +92,13 @@ public class ConsoleClient {
             } else if (line.equals("size")) {
                 System.out.println(engine.size());
             } else if (line.equals("keys")) {
-                for (ByteBuffer key : engine.keySet()) {
-                    String s = new String(key.array());
-                    System.out.println(s);
+                if (engine.size() <= 20) {
+                    for (ByteBuffer key : engine.keySet()) {
+                        String s = new String(key.array());
+                        System.out.println(s);
+                    }
+                } else {
+                    System.out.println("ERROR: more than 20 keys, won't print them");
                 }
             } else {
                 String[] tokens = line.split(" ");
