@@ -18,7 +18,7 @@ public class LeafNode extends TrieNode {
     public LeafNode(HugeMappedFile buf, long offset) throws IOException {
         super(buf, offset);
 
-        buf.position(offset + 1);
+        buf.position(offset + HEADER_SIZE);
         int valueLen = buf.getInt();
         if (valueLen == -1) {
             value = null;
@@ -33,7 +33,7 @@ public class LeafNode extends TrieNode {
     }
 
     public static int estimateSize(ByteBuffer key, ByteBuffer value) {
-        return 1 + 4 + value.limit() + 4 + key.limit();
+        return HEADER_SIZE + 4 + value.limit() + 4 + key.limit();
     }
 
     public static LeafNode writeToBuffer(HugeMappedFile buf, long offset, ByteBuffer key, ByteBuffer value) throws IOException {
@@ -49,7 +49,7 @@ public class LeafNode extends TrieNode {
     void setValue(ByteBuffer newValue) throws IOException {
         if (newValue != null && (value == null || newValue.limit() > value.limit()))
             throw new ValueIsBiggerThanOldException();
-        buf.position(offset + 1);
+        buf.position(offset + HEADER_SIZE);
         if (newValue != null) {
             buf.putInt(newValue.limit());
             buf.put(newValue.array());

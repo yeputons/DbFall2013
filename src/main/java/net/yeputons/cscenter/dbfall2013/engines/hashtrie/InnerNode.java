@@ -19,14 +19,14 @@ public class InnerNode extends TrieNode {
     public InnerNode(HugeMappedFile buf, long offset) throws IOException {
         super(buf, offset);
 
-        buf.position(offset + 1);
+        buf.position(offset + HEADER_SIZE);
         next = new long[256];
         for (int i = 0; i < next.length; i++)
             next[i] = buf.getLong();
     }
 
     public static int estimateSize() {
-        return 1 + 256 * 8;
+        return HEADER_SIZE + 256 * 8;
     }
 
     public static InnerNode writeToBuffer(HugeMappedFile buf, long offset) throws IOException {
@@ -40,7 +40,7 @@ public class InnerNode extends TrieNode {
     public void setNext(int c, long newOffset) throws IOException {
         if (!(0 <= c && c < 256))
             throw new InvalidParameterException("c should be between 0 and 255");
-        buf.putLong(offset + 1 + c * 8, newOffset);
+        buf.putLong(offset + HEADER_SIZE + c * 8, newOffset);
         next[c] = newOffset;
     }
 }

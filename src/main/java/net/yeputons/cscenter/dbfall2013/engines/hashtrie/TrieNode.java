@@ -14,6 +14,7 @@ import java.security.InvalidParameterException;
  * To change this template use File | Settings | File Templates.
  */
 abstract class TrieNode {
+    public static final int HEADER_SIZE = 1;
     public static final int NODE_INNER = 1;
     public static final int NODE_LEAF = 2;
 
