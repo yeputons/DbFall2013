@@ -50,11 +50,11 @@ public class HugeMappedFile {
     public byte get(long position) {
         return getMap(position).get((int)(position & MAP_STEP_MSK));
     }
-    private void put(long position, byte value) {
+    public void put(long position, byte value) {
         getMap(position).put((int)(position & MAP_STEP_MSK), value);
     }
 
-    private void get(long position, byte[] value) {
+    public void get(long position, byte[] value) {
         int i = 0;
         while (i < value.length) {
             long startPos = position;
@@ -65,7 +65,7 @@ public class HugeMappedFile {
             i += endPos - startPos;
         }
     }
-    private void put(long position, byte[] value) {
+    public void put(long position, byte[] value) {
         int i = 0;
         while (i < value.length) {
             long startPos = position;
@@ -77,7 +77,7 @@ public class HugeMappedFile {
         }
     }
 
-    private int getInt(long position) {
+    public int getInt(long position) {
         int res = 0;
         res |= (get(position + 0) & 0xFF) << 24;
         res |= (get(position + 1) & 0xFF) << 16;
@@ -90,6 +90,29 @@ public class HugeMappedFile {
         put(position + 1, (byte)((value >> 16) & 0xFF));
         put(position + 2, (byte)((value >>  8) & 0xFF));
         put(position + 3, (byte)((value >>  0) & 0xFF));
+    }
+
+    public long getLong(long position) {
+        long res = 0;
+        res |= (get(position + 0) & 0xFF) << 56;
+        res |= (get(position + 1) & 0xFF) << 48;
+        res |= (get(position + 2) & 0xFF) << 40;
+        res |= (get(position + 3) & 0xFF) << 32;
+        res |= (get(position + 4) & 0xFF) << 24;
+        res |= (get(position + 5) & 0xFF) << 16;
+        res |= (get(position + 6) & 0xFF) <<  8;
+        res |= (get(position + 7) & 0xFF) <<  0;
+        return res;
+    }
+    public void putLong(long position, long value) {
+        put(position + 0, (byte)((value >> 56) & 0xFF));
+        put(position + 1, (byte)((value >> 48) & 0xFF));
+        put(position + 2, (byte)((value >> 40) & 0xFF));
+        put(position + 3, (byte)((value >> 32) & 0xFF));
+        put(position + 4, (byte)((value >> 24) & 0xFF));
+        put(position + 5, (byte)((value >> 16) & 0xFF));
+        put(position + 6, (byte)((value >>  8) & 0xFF));
+        put(position + 7, (byte)((value >>  0) & 0xFF));
     }
 
     // Methods which use currentPosition
@@ -106,6 +129,17 @@ public class HugeMappedFile {
     public void putInt(int value) {
         putInt(currentPosition, value);
         currentPosition += 4;
+    }
+
+    public long getLong() {
+        long res = getLong(currentPosition);
+        currentPosition += 8;
+        return res;
+    }
+
+    public void putLong(long value) {
+        putLong(currentPosition, value);
+        currentPosition += 8;
     }
 
     public byte get() {
