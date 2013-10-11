@@ -60,15 +60,15 @@ Storage file is preallocated to be mmap() usable. If it becomes too small to hol
 all the date, its size is increased twice.
 
 Storage format:
-First 4 bytes - signature. {'Y', 'D', 'B', 1} as for now
-Next 4 bytes - current length of 'busy' part of the file (which was used)
+First 4 bytes - signature. {'Y', 'D', 'B', 2} as for now
+Next 8 bytes - current length of 'busy' part of the file (which was used)
 
-After that descriptions of nodes follow. Root node is always presented at offset 8 and it's always inner.
+After that descriptions of nodes follow. Root node is always presented at offset 12 and it's always inner.
 
 First byte of each node's specification is its type:
-1. Inner node has type=1. After that 256 int32 values follow - offsets of children of this inner node.
+1. Inner node has type=1. After that 256 int64 values follow - offsets of children of this inner node.
    Unexisting child is represented by offset zero, which is invalid offset.
-2. Leaf node has type=2. Then its value's length follows (in bytes or -1 for null). Then the value
-   goes itself, then key's length, then the key.
+2. Leaf node has type=2. Then its value's length follows (int32, in bytes, or -1 for null). Then the value
+   goes itself, then key's length (int32), then the key.
 
-Content of the unsued part of storage is undefined and is not used.
+Content of the unused part of storage is undefined and is not used.
