@@ -59,10 +59,11 @@ public class HugeMappedFile {
         while (i < value.length) {
             long startPos = position;
             long endPos = Math.min(startPos + value.length - i, (startPos | MAP_STEP_MSK) + 1);
-            MappedByteBuffer buf = getMap(endPos);
+            MappedByteBuffer buf = getMap(startPos);
             buf.position((int)(position & MAP_STEP_MSK));
             buf.get(value, i, (int)(endPos - startPos));
             i += endPos - startPos;
+            position = endPos;
         }
     }
     public void put(long position, byte[] value) {
@@ -70,10 +71,11 @@ public class HugeMappedFile {
         while (i < value.length) {
             long startPos = position;
             long endPos = Math.min(startPos + value.length - i, (startPos | MAP_STEP_MSK) + 1);
-            MappedByteBuffer buf = getMap(endPos);
-            buf.position((int)(position & MAP_STEP_MSK));
+            MappedByteBuffer buf = getMap(startPos);
+            buf.position((int)(startPos & MAP_STEP_MSK));
             buf.put(value, i, (int)(endPos - startPos));
             i += endPos - startPos;
+            position = endPos;
         }
     }
 
