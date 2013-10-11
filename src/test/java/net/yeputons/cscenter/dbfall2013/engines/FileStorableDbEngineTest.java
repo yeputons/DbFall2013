@@ -43,7 +43,7 @@ public abstract class FileStorableDbEngineTest {
         assertEquals(real, engine);
 
         Random rnd = new Random();
-        for (int step = 0; step < 200; step++) {
+        for (int step = 0; step < 500; step++) {
             if (rnd.nextInt(100) <= 30) {
                 engine.close();
                 engine = createEngine();
