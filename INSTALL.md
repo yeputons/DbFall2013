@@ -8,7 +8,7 @@ To build this homework, you need the following to be installed in your system:
 If you think you're ready, run the following commands from the root directory of this project:
 Either method 1:
   1. mvn package
-     This command should finish with 'BUILD SUCCESS' message. 17 tests should be run, 1 of them should be skipped
+     This command should finish with 'BUILD SUCCESS' message. 17 tests should be run, 0 of them should be skipped
   2. cd target
   3. java -jar net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar
 
@@ -16,7 +16,7 @@ Or method 2:
   1. mvn compile
      This command should finish with 'BUILD SUCCESS' message.
   2. mvn test
-     17 tests should be run, 1 of them should be skipped
+     17 tests should be run, 0 of them should be skipped
   3. mvn exec:java
 
 == Usage

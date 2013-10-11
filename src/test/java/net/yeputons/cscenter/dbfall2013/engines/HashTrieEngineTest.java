@@ -12,7 +12,6 @@ import java.io.IOException;
  * Time: 22:52
  * To change this template use File | Settings | File Templates.
  */
-@Ignore
 public class HashTrieEngineTest extends FileStorableDbEngineTest {
     public HashTrieEngineTest() throws IOException {
         super();
