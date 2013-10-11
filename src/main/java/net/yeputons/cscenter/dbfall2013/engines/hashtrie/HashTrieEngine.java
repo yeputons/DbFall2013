@@ -2,6 +2,7 @@ package net.yeputons.cscenter.dbfall2013.engines.hashtrie;
 
 import net.yeputons.cscenter.dbfall2013.engines.FileStorableDbEngine;
 import net.yeputons.cscenter.dbfall2013.engines.SimpleEngine;
+import net.yeputons.cscenter.dbfall2013.util.HugeMappedFile;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -24,17 +25,17 @@ import java.util.Set;
 public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine {
     protected File storage;
     protected RandomAccessFile dataFile;
-    protected MappedByteBuffer data;
-    protected int dataUsedLength;
+    protected HugeMappedFile data;
+    protected long dataUsedLength;
 
     protected final static MessageDigest md;
     protected final int MD_LEN = 160 / 8;
     protected int currentSize;
 
-    protected final int SIGNATURE_OFFSET = 0;
-    protected final byte[] SIGNATURE = { 'Y', 'D', 'B', 1 };
-    protected final int USED_LENGTH_OFFSET = 4;
-    protected final int ROOT_NODE_OFFSET = 8;
+    protected final long SIGNATURE_OFFSET = 0;
+    protected final byte[] SIGNATURE = { 'Y', 'D', 'B', 2 };
+    protected final long USED_LENGTH_OFFSET = 4;
+    protected final long ROOT_NODE_OFFSET = 12;
 
     static {
         try {
@@ -44,7 +45,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         }
     }
 
-    protected int calcSize(int offset) throws IOException {
+    protected int calcSize(long offset) throws IOException {
         TrieNode node = TrieNode.createFromFile(data, offset);
         if (node instanceof LeafNode) {
             LeafNode leaf = (LeafNode)node;
@@ -53,7 +54,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         InnerNode inner = (InnerNode)node;
         int res = 0;
         for (int i = 0; i < inner.next.length; i++) {
-            int off = inner.next[i];
+            long off = inner.next[i];
             if (off != 0)
                 res += calcSize(off);
         }
@@ -63,21 +64,21 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     protected void openStorage() throws IOException {
         dataFile = new RandomAccessFile(storage, "rw");
         if (dataFile.length() == 0) {
-            dataUsedLength = 8;
+            dataUsedLength = ROOT_NODE_OFFSET;
             dataFile.write(SIGNATURE);
-            dataFile.writeInt(dataUsedLength);
+            dataFile.writeLong(dataUsedLength);
 
-            data = dataFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, dataFile.length());
+            data = new HugeMappedFile(dataFile.getChannel());
 
-            int offset = appendToStorage(InnerNode.estimateSize());
+            long offset = appendToStorage(InnerNode.estimateSize());
             InnerNode.writeToBuffer(data, offset);
         } else {
-            data = dataFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, dataFile.length());
+            data = new HugeMappedFile(dataFile.getChannel());
             byte[] readSig = new byte[SIGNATURE.length];
             data.get(readSig);
             if (!Arrays.equals(SIGNATURE, readSig))
                 throw new IOException("Invalid DB signature");
-            dataUsedLength = data.getInt();
+            dataUsedLength = data.getLong();
         }
         if (dataUsedLength > dataFile.length())
             throw new IOException("Invalid DB: used length is greater than file length");
@@ -111,7 +112,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         }
     }
 
-    private void keySet(int ptr, Set<ByteBuffer> keySet) throws IOException {
+    private void keySet(long ptr, Set<ByteBuffer> keySet) throws IOException {
         TrieNode node = TrieNode.createFromFile(data, ptr);
         if (node instanceof LeafNode) {
             LeafNode leaf = (LeafNode)node;
@@ -151,7 +152,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
 
             int hashPtr = 0;
             while (!(node instanceof LeafNode)) {
-                int ptr = ((InnerNode)node).next[hash[hashPtr] & 0xFF];
+                long ptr = ((InnerNode)node).next[hash[hashPtr] & 0xFF];
                 if (ptr == 0) throw new NoSuchElementException();
                 node = TrieNode.createFromFile(data, ptr);
                 hashPtr++;
@@ -210,7 +211,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
                 if (inner.next[c] != 0) {
                     node = TrieNode.createFromFile(data, inner.next[c]);
                 } else {
-                    int offset = appendToStorage(LeafNode.estimateSize(key, value));
+                    long offset = appendToStorage(LeafNode.estimateSize(key, value));
                     LeafNode leaf = LeafNode.writeToBuffer(data, offset, key, value);
                     inner.setNext(c, leaf.offset);
                     node = leaf;
@@ -226,7 +227,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
                 try {
                     leaf.setValue(value);
                 } catch (ValueIsBiggerThanOldException e) {
-                    int offset = appendToStorage(LeafNode.estimateSize(key, value));
+                    long offset = appendToStorage(LeafNode.estimateSize(key, value));
                     LeafNode newLeaf = LeafNode.writeToBuffer(data, offset, key, value);
                     parent.setNext(parentC, newLeaf.offset);
                 }
@@ -240,21 +241,15 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
 
                 currentSize += 1;
                 if (leaf.value == null) {
-                    int offset = appendToStorage(LeafNode.estimateSize(key, value));
+                    long offset = appendToStorage(LeafNode.estimateSize(key, value));
                     LeafNode newLeaf = LeafNode.writeToBuffer(data, offset, key, value);
                     parent.setNext(parentC, newLeaf.offset);
                     return null;
                 }
-                {
-                    LeafNode tmp = getNode(leaf.key);
-                    assert(tmp.value.equals(leaf.value));
-                }
 
                 byte[] hash2 = md.digest(leaf.key.array());
-                for (int i = 0; i < hashPtr; i++)
-                    assert(hash[i] == hash2[i]);
                 while (true) {
-                    int offset = appendToStorage(InnerNode.estimateSize());
+                    long offset = appendToStorage(InnerNode.estimateSize());
                     InnerNode newInner = InnerNode.writeToBuffer(data, offset);
                     parent.setNext(parentC, newInner.offset);
 
@@ -267,15 +262,9 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
                 }
                 parent.setNext(hash2[hashPtr] & 0xFF, leaf.offset);
 
-                int offset = appendToStorage(LeafNode.estimateSize(key, value));
+                long offset = appendToStorage(LeafNode.estimateSize(key, value));
                 LeafNode newLeaf = LeafNode.writeToBuffer(data, offset, key, value);
                 parent.setNext(hash[hashPtr] & 0xFF, newLeaf.offset);
-
-                LeafNode tmp = getNode(key);
-                assert(tmp.value.equals(value));
-
-                tmp = getNode(leaf.key);
-                assert(tmp.value.equals(leaf.value));
                 return null;
             }
         } catch (IOException e) {
@@ -283,14 +272,14 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         }
     }
 
-    private int appendToStorage(int size) throws IOException {
-        int res = dataUsedLength;
+    private long appendToStorage(long size) throws IOException {
+        long res = dataUsedLength;
         while (dataUsedLength + size > dataFile.length()) {
             dataFile.setLength(2 * dataFile.length());
-            data = dataFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, dataFile.length());
+            data = new HugeMappedFile(dataFile.getChannel());
         }
         dataUsedLength += size;
-        data.putInt(USED_LENGTH_OFFSET, dataUsedLength);
+        data.putLong(USED_LENGTH_OFFSET, dataUsedLength);
         return res;
     }
 
