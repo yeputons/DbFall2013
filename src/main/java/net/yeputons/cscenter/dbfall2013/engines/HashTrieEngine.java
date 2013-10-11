@@ -257,7 +257,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
 
     private int appendToStorage(int size) throws IOException {
         int res = dataUsedLength;
-        if (dataUsedLength + size > data.length()) {
+        while (dataUsedLength + size > data.length()) {
             data.setLength(2 * data.length());
         }
         dataUsedLength += size;
