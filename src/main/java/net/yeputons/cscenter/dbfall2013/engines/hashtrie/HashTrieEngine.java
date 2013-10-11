@@ -44,6 +44,22 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         }
     }
 
+    protected int calcSize(int offset) throws IOException {
+        TrieNode node = TrieNode.createFromFile(data, offset);
+        if (node instanceof LeafNode) {
+            LeafNode leaf = (LeafNode)node;
+            return leaf.value == null ? 0 : 1;
+        }
+        InnerNode inner = (InnerNode)node;
+        int res = 0;
+        for (int i = 0; i < inner.next.length; i++) {
+            int off = inner.next[i];
+            if (off != 0)
+                res += calcSize(off);
+        }
+        return res;
+    }
+
     protected void openStorage() throws IOException {
         dataFile = new RandomAccessFile(storage, "rw");
         if (dataFile.length() == 0) {
@@ -65,7 +81,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         }
         if (dataUsedLength > dataFile.length())
             throw new IOException("Invalid DB: used length is greater than file length");
-        currentSize = keySet().size();
+        currentSize = calcSize(ROOT_NODE_OFFSET);
     }
 
     public HashTrieEngine(File storage) throws IOException {
