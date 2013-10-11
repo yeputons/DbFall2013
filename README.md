@@ -6,11 +6,13 @@ Computer Science Center, fall 2013, course 'Databases', homework.
 You can run this app in batch mode by passing '--batch' option. This option
 disables greeting and command prompts, which may make batch use possible
 
-== Installation
+Installation
+============
 
 See INSTALL.md
 
-== Usage
+Usage
+=====
 
 By default, HashTrieStorage is enabled. It should require O(1) memory regardless of DB size.
 However, it does not support DBs files larger than 2GB.
@@ -23,11 +25,13 @@ No engine supports null keys of values. All of them implements Map<ByteBuffer, B
 'clear' operation is implemented by removing storage file. All stored numbers
 are 32-bit signed integers, high byte first.
 
-== InMemoryEngine
+InMemoryEngine
+==============
 
 Uses HashMap<>, does not store anything to the disk.
 
-== LogFileEngine
+LogFileEngine
+=============
 
 Extends InMemoryEngine. Writes every operation to the disk.
 
@@ -43,7 +47,8 @@ Next bytes: the key itself
 Next 4 bytes: length of value (int32). It can be -1 too, which means 'remove this key from DB'.
 Next bytes: the value itself
 
-== HashTrieEngine
+HashTrieEngine
+==============
 
 This engine stores trie (prefix tree) of keys' SHA1 hashes. Each node may have up to 256 children
 and maximal depth of such trie is at most 160/8 = 20 edges.
