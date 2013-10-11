@@ -3,6 +3,9 @@ To build this homework, you need the following to be installed in your system:
 1. JDK SE >=1.7 (I haven't tested it with Java6)
 2. Apache Maven
 
+Warning: BigStressTest requires a several minutes and 3GB of space in your temp folder to run successfully.
+If you don't have either of them, just add '@org.junit.Ignore' before public class' definition in BigStressTest.java
+
 If you think you're ready, run the following commands from the root directory of this project:
 Either method 1:
   1. mvn package

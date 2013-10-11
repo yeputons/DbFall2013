@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNotSame;
  */
 public class BigStressTest {
     FileStorableDbEngine engine;
-    final int ELEMENTS = 800000;
+    final int ELEMENTS = 2000000;
     final int KEY_SIZE = 10;
     final int VALUE_SIZE = 1024;
 
