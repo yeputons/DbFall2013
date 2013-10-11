@@ -33,8 +33,11 @@ public class LeafNode extends TrieNode {
         file.read(key.array());
     }
 
-    public static LeafNode addToFile(RandomAccessFile file, ByteBuffer key, ByteBuffer value) throws IOException {
-        int offset = (int)file.length();
+    public static int estimateSize(ByteBuffer key, ByteBuffer value) {
+        return 1 + 4 + value.limit() + 4 + key.limit();
+    }
+
+    public static LeafNode writeToFile(RandomAccessFile file, int offset, ByteBuffer key, ByteBuffer value) throws IOException {
         file.seek(offset);
         file.writeByte(NODE_LEAF);
         file.writeInt(value.limit());

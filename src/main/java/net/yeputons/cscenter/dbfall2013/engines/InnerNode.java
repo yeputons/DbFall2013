@@ -26,8 +26,11 @@ public class InnerNode extends TrieNode {
             next[i] = file.readInt();
     }
 
-    public static InnerNode addToFile(RandomAccessFile file) throws IOException {
-        int offset = (int)file.length();
+    public static int estimateSize() {
+        return 1 + 256 * 4;
+    }
+
+    public static InnerNode writeToFile(RandomAccessFile file, int offset) throws IOException {
         file.seek(offset);
         file.writeByte(NODE_INNER);
         for (int i = 0; i < 256; i++)
