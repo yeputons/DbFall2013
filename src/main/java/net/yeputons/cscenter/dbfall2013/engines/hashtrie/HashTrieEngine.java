@@ -246,14 +246,8 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
                     parent.setNext(parentC, newLeaf.offset);
                     return null;
                 }
-                {
-                    LeafNode tmp = getNode(leaf.key);
-                    assert(tmp.value.equals(leaf.value));
-                }
 
                 byte[] hash2 = md.digest(leaf.key.array());
-                for (int i = 0; i < hashPtr; i++)
-                    assert(hash[i] == hash2[i]);
                 while (true) {
                     long offset = appendToStorage(InnerNode.estimateSize());
                     InnerNode newInner = InnerNode.writeToBuffer(data, offset);
@@ -271,12 +265,6 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
                 long offset = appendToStorage(LeafNode.estimateSize(key, value));
                 LeafNode newLeaf = LeafNode.writeToBuffer(data, offset, key, value);
                 parent.setNext(hash[hashPtr] & 0xFF, newLeaf.offset);
-
-                LeafNode tmp = getNode(key);
-                assert(tmp.value.equals(value));
-
-                tmp = getNode(leaf.key);
-                assert(tmp.value.equals(leaf.value));
                 return null;
             }
         } catch (IOException e) {
