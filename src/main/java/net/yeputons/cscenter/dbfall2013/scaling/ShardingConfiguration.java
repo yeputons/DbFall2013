@@ -5,15 +5,11 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.Socket;
-import java.net.URL;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
@@ -35,18 +31,9 @@ public class ShardingConfiguration {
 
     public final static int DEFAULT_PORT = 33131;
 
-    public class ShardItem {
-        public String host;
-        public int port;
+    public TreeMap<String, ShardDescription> shards;
 
-        public Socket openSocket() throws IOException {
-            return new Socket(host, port);
-        }
-    }
-
-    public TreeMap<String, ShardItem> shards;
-
-    public ShardItem getShard(byte[] key) {
+    public ShardDescription getShard(byte[] key) {
         StringBuilder digest = new StringBuilder();
         for (byte b : md.digest(key))
             digest.append(String.format("%02x", b & 0xFF));
@@ -55,7 +42,7 @@ public class ShardingConfiguration {
     }
 
     public void readFromFile(File f) throws FileNotFoundException {
-        shards = new TreeMap<String, ShardItem>();
+        shards = new TreeMap<String, ShardDescription>();
         Yaml yaml = new Yaml();
         Map data = (Map)yaml.load(new FileInputStream(f));
         for (Object _node : (List)data.get("sharding")) {
@@ -64,7 +51,7 @@ public class ShardingConfiguration {
             String startHash = (String) node.get("startHash");
             startHash = startHash.toLowerCase();
 
-            ShardItem item = new ShardItem();
+            ShardDescription item = new ShardDescription();
             item.host = (String) node.get("host");
             item.port = (Integer) node.get("port");
             if (item.host == "") item.host = "localhost";

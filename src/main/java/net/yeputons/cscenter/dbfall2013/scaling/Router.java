@@ -1,15 +1,12 @@
 package net.yeputons.cscenter.dbfall2013.scaling;
 
 import net.yeputons.cscenter.dbfall2013.engines.SimpleEngine;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -89,7 +86,7 @@ public class Router extends SimpleEngine {
 
     @Override
     public void clear() {
-        for (Entry<String, ShardingConfiguration.ShardItem> shard : conf.shards.entrySet()) {
+        for (Entry<String, ShardDescription> shard : conf.shards.entrySet()) {
             Socket s = null;
             try {
                 s = shard.getValue().openSocket();
