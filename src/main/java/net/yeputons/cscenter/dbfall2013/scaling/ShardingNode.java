@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -61,7 +62,7 @@ public class ShardingNode {
                 byte[] key = readBytes(in);
                 ByteBuffer res = engine.get(ByteBuffer.wrap(key));
                 out.write("ok".getBytes());
-                writeBytes(out, res.array());
+                writeBytes(out, res == null ? null : res.array());
             } else {
                 out.write("no".getBytes());
                 writeBytes(out, "Invalid command".getBytes());
@@ -81,11 +82,13 @@ public class ShardingNode {
                     try {
                         processClient(clientSocket);
                     } catch (EOFException e) {
+                    } catch (SocketException e) {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     try {
                         clientSocket.close();
+                    } catch (SocketException e) {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
