@@ -71,46 +71,61 @@ public class ShardingNode {
         }
     }
 
-    Set<Thread> threads;
+    Set<Socket> clients;
+    protected ServerSocket serverSocket;
+    protected volatile boolean isRunning;
 
     public void run(File storage, InetAddress bindTo, int port) throws Exception {
+        isRunning = true;
         engine = new HashTrieEngine(storage);
-        ServerSocket serverSocket = new ServerSocket(port, 0, bindTo);
+        serverSocket = new ServerSocket(port, 0, bindTo);
 
-        threads = new HashSet<Thread>();
+        clients = new HashSet<Socket>();
 
         while (true) {
-            final Socket clientSocket = serverSocket.accept();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    synchronized (threads) {
-                        threads.add(Thread.currentThread());
-                    }
+            try {
+                final Socket clientSocket = serverSocket.accept();
+                if (!isRunning) break;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized (clients) {
+                            clients.add(clientSocket);
+                        }
 
-                    try {
-                        processClient(clientSocket);
-                    } catch (EOFException e) {
-                    } catch (SocketException e) {
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        clientSocket.close();
-                    } catch (SocketException e) {
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                        try {
+                            processClient(clientSocket);
+                        } catch (EOFException e) {
+                        } catch (SocketException e) {
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            clientSocket.close();
+                        } catch (SocketException e) {
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
 
-                    synchronized (threads) {
-                        threads.remove(Thread.currentThread());
+                        synchronized (clients) {
+                            clients.remove(clientSocket);
+                        }
                     }
-                }
-            }).run();
+                }).run();
+            } catch (SocketException e) {
+            }
         }
-/*        for (Thread th : threads)
-            th.interrupt();
-        serverSocket.close();*/
+        for (Socket s : clients)
+            s.close();
+        serverSocket.close();
+    }
+    public void stop() {
+        isRunning = false;
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) throws Exception {
