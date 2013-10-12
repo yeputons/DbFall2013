@@ -33,11 +33,14 @@ public class ShardingConfiguration {
 
     public TreeMap<String, ShardDescription> shards;
 
+    public ShardingConfiguration() {
+        shards = new TreeMap<String, ShardDescription>();
+    }
+
     public ShardDescription getShard(byte[] key) {
         StringBuilder digest = new StringBuilder();
         for (byte b : md.digest(key))
             digest.append(String.format("%02x", b & 0xFF));
-        System.err.println(digest);
         return shards.floorEntry(digest.toString()).getValue();
     }
 

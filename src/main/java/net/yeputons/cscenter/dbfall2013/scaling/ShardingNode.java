@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -26,7 +28,7 @@ public class ShardingNode {
         return res;
     }
     private static void writeBytes(DataOutputStream out, byte[] data) throws IOException {
-        if (out == null) {
+        if (data == null) {
             out.writeInt(-1);
         } else {
             out.writeInt(data.length);
@@ -49,9 +51,8 @@ public class ShardingNode {
                 out.write("ok".getBytes());
                 out.writeInt(engine.size());
             } else if (Arrays.equals(cmd, "del".getBytes())) {
-                int len = in.readInt();
                 byte[] key = readBytes(in);
-                engine.remove(key);
+                engine.remove(ByteBuffer.wrap(key));
                 out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "put".getBytes())) {
                 byte[] value = readBytes(in);
@@ -70,15 +71,23 @@ public class ShardingNode {
         }
     }
 
+    Set<Thread> threads;
+
     public void run(File storage, InetAddress bindTo, int port) throws Exception {
         engine = new HashTrieEngine(storage);
         ServerSocket serverSocket = new ServerSocket(port, 0, bindTo);
+
+        threads = new HashSet<Thread>();
 
         while (true) {
             final Socket clientSocket = serverSocket.accept();
             new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    synchronized (threads) {
+                        threads.add(Thread.currentThread());
+                    }
+
                     try {
                         processClient(clientSocket);
                     } catch (EOFException e) {
@@ -92,9 +101,16 @@ public class ShardingNode {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+                    synchronized (threads) {
+                        threads.remove(Thread.currentThread());
+                    }
                 }
             }).run();
         }
+/*        for (Thread th : threads)
+            th.interrupt();
+        serverSocket.close();*/
     }
 
     public static void main(String[] args) throws Exception {
