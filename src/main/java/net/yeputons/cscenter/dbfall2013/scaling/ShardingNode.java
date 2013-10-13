@@ -45,23 +45,36 @@ public class ShardingNode {
             byte[] cmd = new byte[3];
             in.readFully(cmd);
             if (Arrays.equals(cmd, "clr".getBytes())) {
-                engine.clear();
+                synchronized (engine) {
+                    engine.clear();
+                }
                 out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "siz".getBytes())) {
                 out.write("ok".getBytes());
-                out.writeInt(engine.size());
+                int siz;
+                synchronized (engine) {
+                    siz = engine.size();
+                }
+                out.writeInt(siz);
             } else if (Arrays.equals(cmd, "del".getBytes())) {
                 byte[] key = readBytes(in);
-                engine.remove(ByteBuffer.wrap(key));
+                synchronized (engine) {
+                    engine.remove(ByteBuffer.wrap(key));
+                }
                 out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "put".getBytes())) {
                 byte[] value = readBytes(in);
                 byte[] key = readBytes(in);
-                engine.put(ByteBuffer.wrap(key), ByteBuffer.wrap(value));
+                synchronized (engine) {
+                    engine.put(ByteBuffer.wrap(key), ByteBuffer.wrap(value));
+                }
                 out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "get".getBytes())) {
                 byte[] key = readBytes(in);
-                ByteBuffer res = engine.get(ByteBuffer.wrap(key));
+                ByteBuffer res;
+                synchronized (engine) {
+                    res = engine.get(ByteBuffer.wrap(key));
+                }
                 out.write("ok".getBytes());
                 writeBytes(out, res == null ? null : res.array());
             } else {
@@ -118,6 +131,7 @@ public class ShardingNode {
         for (Socket s : clients)
             s.close();
         serverSocket.close();
+        engine.close();
     }
     public void stop() {
         isRunning = false;
