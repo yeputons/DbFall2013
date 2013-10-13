@@ -1,0 +1,14 @@
+# Remember to enclose hashes in quotes to avoid casting to integer
+sharding:
+  - startHash: "00"
+    host: localhost
+    port: 23917
+  - startHash: "40"
+    host: localhost
+    port: 23918
+  - startHash: "80"
+    host: localhost
+    port: 23919
+  - startHash: "C0"
+    host: localhost
+    port: 23920

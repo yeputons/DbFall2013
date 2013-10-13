@@ -39,12 +39,25 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.4</version>
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>net.yeputons.cscenter.dbfall2013.clients.ConsoleClient</mainClass>
+                            <mainClass>net.yeputons.cscenter.dbfall2013.clients.Bootstrapper</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -54,7 +67,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.2.1</version>
                 <configuration>
-                    <mainClass>net.yeputons.cscenter.dbfall2013.clients.ConsoleClient</mainClass>
+                    <mainClass>net.yeputons.cscenter.dbfall2013.clients.Bootstrapper</mainClass>
                 </configuration>
             </plugin>
         </plugins>

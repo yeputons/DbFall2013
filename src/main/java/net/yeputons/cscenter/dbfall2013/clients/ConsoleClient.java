@@ -1,6 +1,8 @@
 package net.yeputons.cscenter.dbfall2013.clients;
 
 import net.yeputons.cscenter.dbfall2013.engines.hashtrie.HashTrieEngine;
+import net.yeputons.cscenter.dbfall2013.scaling.Router;
+import net.yeputons.cscenter.dbfall2013.scaling.ShardingConfiguration;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -61,7 +63,10 @@ public class ConsoleClient {
         if (Arrays.asList(args).contains("--batch"))
             batchMode = true;
 
-        HashTrieEngine engine = new HashTrieEngine(new File("storage.trie"));
+        ShardingConfiguration conf = new ShardingConfiguration();
+        conf.readFromFile(new File("sharding.yaml"));
+        Router engine = new Router(conf);
+        //HashTrieEngine engine = new HashTrieEngine(new File("storage.trie"));
         //LogFileEngine engine = new LogFileEngine(new File("storage.log"));
 
         if (!batchMode) {
