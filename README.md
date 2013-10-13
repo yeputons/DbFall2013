@@ -14,16 +14,48 @@ See INSTALL.md
 Usage
 =====
 
-By default, HashTrieStorage is enabled. It should require O(1) memory regardless of DB size.
-However, it does not support DBs files larger than 2GB.
+Three options of running JAR is available:
+1. 'client'. Simple console client. By default, it accesses distributed database based on configuration specified in
+   'sharding.yaml'.
+2. 'node'. Starts one sharding node. Requires path to storage file, bind IP (for example, 127.0.0.1) and port as its parameters
+3. 'all_nodes'. Starts locally all nodes for configuration specified in sharding.yaml (in different threads of one process).
 
-If you are not satisfied somewhy, you can enable LogFileEngine or InMemoryENgine instead. To do this,
+If you are not satisfied somewhy, you can enable HashTrieStorage, LogFileEngine or InMemoryEngine in client instead. To do this,
 edit ConsoleClient.java and just re-evaluate all steps from the 'installation' section.
+
+For example, type these commands to test sharding:
+java -jar target/net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar all_nodes
+java -jar target/net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar client
+
+## Sharding configuration
+
+## Sharding protocol
+Protocol is pretty straightforward - client initiates connection to a shard and sends commands, while
+shards sends replies.
+
+Command is a three-byte string ('clr', 'siz', 'del', 'put', 'get'). Then its arguments follow,
+with arrays represented as 32-bit integer length (in bytes, high byte first) and its content then.
+
+Each command returns two-byte string ('ok' or 'no') representing result of execution. 'no' is followed
+by an array (encoded as above), specifying human-readable error message (in ASCII).
+
+1. 'clr' - no arguments
+2. 'siz' - no arguments
+3. 'del' - key follows
+4. 'put' - key and value follows
+5. 'get' - key follows. Returns either array with length=-1 and no elements, if no such element is presented
+   or element's value as array otherwise.
+
+## Storage engines
 
 No engine supports null keys of values. All of them implements Map<ByteBuffer, ByteBuffer>
 
-'clear' operation is implemented by removing storage file. All stored numbers
-are 32-bit signed integers, high byte first.
+All stored numbers are 32-bit signed integers, high byte first.
+
+### Router
+
+It's a fake engine, which provides access to sharding cluster. Please note, that its 'remove' and 'put' return null instead of
+old value of the corresponding key.
 
 ### InMemoryEngine
 
