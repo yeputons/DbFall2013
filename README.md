@@ -15,6 +15,7 @@ Usage
 =====
 
 Three options of running JAR is available:
+
 1. 'client'. Simple console client. By default, it accesses distributed database based on configuration specified in
    'sharding.yaml'.
 2. 'node'. Starts one sharding node. Requires path to storage file, bind IP (for example, 127.0.0.1) and port as its parameters
@@ -24,8 +25,11 @@ If you are not satisfied somewhy, you can enable HashTrieStorage, LogFileEngine 
 edit ConsoleClient.java and just re-evaluate all steps from the 'installation' section.
 
 For example, type these commands to test sharding:
+
+~~~~
 java -jar target/net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar all_nodes
 java -jar target/net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar client
+~~~~
 
 ## Sharding configuration
 
@@ -33,17 +37,17 @@ java -jar target/net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar client
 Protocol is pretty straightforward - client initiates connection to a shard and sends commands, while
 shards sends replies.
 
-Command is a three-byte string ('clr', 'siz', 'del', 'put', 'get'). Then its arguments follow,
+Command is a three-byte string (`clr`, `siz`, `del`, `put`, `get`). Then its arguments follow,
 with arrays represented as 32-bit integer length (in bytes, high byte first) and its content then.
 
-Each command returns two-byte string ('ok' or 'no') representing result of execution. 'no' is followed
+Each command returns two-byte string (`ok` or `no`) representing result of execution. `no` is followed
 by an array (encoded as above), specifying human-readable error message (in ASCII).
 
-1. 'clr' - no arguments
-2. 'siz' - no arguments
-3. 'del' - key follows
-4. 'put' - key and value follows
-5. 'get' - key follows. Returns either array with length=-1 and no elements, if no such element is presented
+1. `clr` - no arguments
+2. `siz` - no arguments
+3. `del` - key follows
+4. `put` - key and value follows
+5. `get` - key follows. Returns either array with `length == -1` and no elements, if no such element is presented
    or element's value as array otherwise.
 
 ## Storage engines
