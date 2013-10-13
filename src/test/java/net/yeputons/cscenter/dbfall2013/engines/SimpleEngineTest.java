@@ -94,6 +94,25 @@ public class SimpleEngineTest {
     }
 
     @Test
+    public void clearTest() {
+        Map<ByteBuffer, ByteBuffer> map = new HashMap<ByteBuffer, ByteBuffer>();
+        Map<ByteBuffer, ByteBuffer> map2 = new HashMap<ByteBuffer, ByteBuffer>();
+
+        map2.put(str2Buf("a"), str2Buf("b"));
+
+        assertEquals(map, engine);
+        assertNotSame(map2, engine);
+
+        engine.put(str2Buf("a"), str2Buf("a"));
+        assertNotSame(map, engine);
+        assertNotSame(map2, engine);
+
+        engine.clear();
+        assertEquals(map, engine);
+        assertNotSame(map2, engine);
+    }
+
+    @Test
     public void basicTest() {
         assertEquals(null, engine.get(str2Buf("a")));
         assertEquals(null, engine.get(str2Buf("ab")));
