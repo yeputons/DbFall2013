@@ -6,8 +6,6 @@ import net.yeputons.cscenter.dbfall2013.util.HugeMappedFile;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -61,17 +59,23 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         return res;
     }
 
+    private void resetStorage() throws IOException {
+        dataUsedLength = ROOT_NODE_OFFSET;
+        dataFile.seek(0);
+        dataFile.write(SIGNATURE);
+        dataFile.writeLong(dataUsedLength);
+        dataFile.getFD().sync();
+
+        data = new HugeMappedFile(dataFile.getChannel());
+
+        long offset = appendToStorage(InnerNode.estimateSize());
+        InnerNode.writeToBuffer(data, offset);
+    }
+
     protected void openStorage() throws IOException {
         dataFile = new RandomAccessFile(storage, "rw");
         if (dataFile.length() == 0) {
-            dataUsedLength = ROOT_NODE_OFFSET;
-            dataFile.write(SIGNATURE);
-            dataFile.writeLong(dataUsedLength);
-
-            data = new HugeMappedFile(dataFile.getChannel());
-
-            long offset = appendToStorage(InnerNode.estimateSize());
-            InnerNode.writeToBuffer(data, offset);
+            resetStorage();
         } else {
             data = new HugeMappedFile(dataFile.getChannel());
             byte[] readSig = new byte[SIGNATURE.length];
@@ -104,9 +108,9 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     @Override
     public void clear() {
         try {
-            close();
-            storage.delete();
-            openStorage();
+            flush();
+            resetStorage();
+            currentSize = calcSize(ROOT_NODE_OFFSET);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
