@@ -70,6 +70,8 @@ public class Router extends SimpleEngine implements AutoCloseable {
 
             c.readOk();
             int len = c.in.readInt();
+            if (len == -1) return null;
+
             byte[] value = new byte[len];
             c.in.readFully(value);
 
