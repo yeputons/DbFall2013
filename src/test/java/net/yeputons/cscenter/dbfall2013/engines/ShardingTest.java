@@ -33,7 +33,7 @@ public class ShardingTest {
         configuration = new ShardingConfiguration();
         nodes = new ArrayList<ShardingNode>();
         int port = ShardingConfiguration.DEFAULT_PORT;
-        for (int start = 0; start < 256; start += 256) {
+        for (int start = 0; start < 256; start += 64) {
             ShardDescription item = new ShardDescription();
             item.host = "localhost";
             item.port = port;
@@ -77,7 +77,7 @@ public class ShardingTest {
         Map<ByteBuffer, ByteBuffer> real = new HashMap<ByteBuffer, ByteBuffer>();
 
         Random rnd = new Random();
-        for (int step = 0; step < 20; step++) {
+        for (int step = 0; step < 350; step++) {
             int operation = rnd.nextInt(100);
             if (operation < 50) {
                 ByteBuffer key = genByteBuffer(rnd);
