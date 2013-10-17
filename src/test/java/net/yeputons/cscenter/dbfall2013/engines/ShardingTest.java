@@ -87,9 +87,8 @@ public class ShardingTest extends AbstractStressTest {
         // after each iteration (hence, quadratic complexity appears)
         for (int step = 0; step < 350; step++) {
             performRandomOperation(rnd, engine, real);
-            for (Map.Entry<ByteBuffer, ByteBuffer> entry : real.entrySet()) {
-                assertEquals(entry.getValue(), engine.get(entry.getKey()));
-            }
+            assertEquals(real.keySet(), engine.keySet());
+            assertEquals(real, engine);
         }
     }
 

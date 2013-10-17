@@ -7,10 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -128,12 +125,70 @@ public class Router extends SimpleEngine implements AutoCloseable {
 
     @Override
     public int size() {
-        throw new UnsupportedOperationException();
+        int sum = 0;
+        for (Entry<String, ShardDescription> shard : conf.shards.entrySet()) {
+            try {
+                ShardConnection c = getConnection(shard.getValue());
+                c.out.write("siz".getBytes());
+                c.readOk();
+                int res = c.in.readInt();
+                sum += res;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return sum;
     }
 
     @Override
     public Set<ByteBuffer> keySet() {
-        throw new UnsupportedOperationException();
+        Set<ByteBuffer> res = new HashSet<ByteBuffer>();
+        for (Entry<String, ShardDescription> shard : conf.shards.entrySet()) {
+            try {
+                ShardConnection c = getConnection(shard.getValue());
+                c.out.write("key".getBytes());
+                c.readOk();
+                int count = c.in.readInt();
+                while (count --> 0) {
+                    int keyLen = c.in.readInt();
+                    byte[] key = new byte[keyLen];
+                    c.in.readFully(key);
+                    res.add(ByteBuffer.wrap(key));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public Set<Entry<ByteBuffer, ByteBuffer>> entrySet() {
+        Set<Entry<ByteBuffer, ByteBuffer>> res = new HashSet<Entry<ByteBuffer, ByteBuffer>>();
+        for (Entry<String, ShardDescription> shard : conf.shards.entrySet()) {
+            try {
+                ShardConnection c = getConnection(shard.getValue());
+                c.out.write("its".getBytes());
+                c.readOk();
+                int count = c.in.readInt();
+                while (count --> 0) {
+                    int keyLen = c.in.readInt();
+                    byte[] key = new byte[keyLen];
+                    c.in.readFully(key);
+
+                    int valueLen = c.in.readInt();
+                    byte[] value = new byte[valueLen];
+                    c.in.readFully(value);
+                    res.add(new AbstractMap.SimpleEntry<ByteBuffer, ByteBuffer>(
+                            ByteBuffer.wrap(key),
+                            ByteBuffer.wrap(value)
+                    ));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return res;
     }
 
     @Override

@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -77,6 +78,22 @@ public class ShardingNode {
                 }
                 out.write("ok".getBytes());
                 writeBytes(out, res == null ? null : res.array());
+            } else if (Arrays.equals(cmd, "key".getBytes())) {
+                out.write("ok".getBytes());
+                synchronized (engine) {
+                    out.writeInt(engine.size());
+                    for (ByteBuffer key : engine.keySet())
+                        writeBytes(out, key.array());
+                }
+            } else if (Arrays.equals(cmd, "its".getBytes())) {
+                out.write("ok".getBytes());
+                synchronized (engine) {
+                    out.writeInt(engine.size());
+                    for (Map.Entry<ByteBuffer, ByteBuffer> entry : engine.entrySet()) {
+                        writeBytes(out, entry.getKey().array());
+                        writeBytes(out, entry.getValue().array());
+                    }
+                }
             } else {
                 out.write("no".getBytes());
                 writeBytes(out, "Invalid command".getBytes());
