@@ -103,6 +103,14 @@ public class ShardingNode {
                     @Override
                     public void run() {
                         synchronized (clients) {
+                            if (!isRunning) {
+                                try {
+                                    clientSocket.close();
+                                } catch (IOException e) {
+                                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                }
+                                return;
+                            }
                             clients.add(clientSocket);
                         }
 
@@ -129,10 +137,14 @@ public class ShardingNode {
             }
             if (!isRunning) break;
         }
-        for (Socket s : clients)
-            s.close();
+        synchronized (clients) {
+            for (Socket s : clients)
+                s.close();
+        }
         serverSocket.close();
-        engine.close();
+        synchronized (engine) {
+            engine.close();
+        }
     }
     public void stop() {
         isRunning = false;
