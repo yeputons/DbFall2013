@@ -26,7 +26,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     protected HugeMappedFile data;
     protected long dataUsedLength;
 
-    protected final static MessageDigest md;
+    protected final MessageDigest md;
     protected final int MD_LEN = 160 / 8;
     protected int currentSize;
 
@@ -34,14 +34,6 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     protected final byte[] SIGNATURE = { 'Y', 'D', 'B', 2 };
     protected final long USED_LENGTH_OFFSET = 4;
     protected final long ROOT_NODE_OFFSET = 12;
-
-    static {
-        try {
-            md = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     protected int calcSize(long offset) throws IOException {
         TrieNode node = TrieNode.createFromFile(data, offset);
@@ -92,6 +84,11 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     public HashTrieEngine(File storage) throws IOException {
         this.storage = storage;
         openStorage();
+        try {
+            md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
     @Override
     public void flush() throws IOException {
