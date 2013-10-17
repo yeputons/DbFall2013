@@ -81,6 +81,7 @@ public class ShardingNode {
                 out.write("no".getBytes());
                 writeBytes(out, "Invalid command".getBytes());
             }
+            out.flush();
         }
     }
 
@@ -98,7 +99,6 @@ public class ShardingNode {
         while (true) {
             try {
                 final Socket clientSocket = serverSocket.accept();
-                if (!isRunning) break;
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -124,9 +124,10 @@ public class ShardingNode {
                             clients.remove(clientSocket);
                         }
                     }
-                }).run();
+                }).start();
             } catch (SocketException e) {
             }
+            if (!isRunning) break;
         }
         for (Socket s : clients)
             s.close();

@@ -39,7 +39,11 @@ public class ShardingConfiguration {
 
     public ShardDescription getShard(byte[] key) {
         StringBuilder digest = new StringBuilder();
-        for (byte b : md.digest(key))
+        byte[] digestArr;
+        synchronized (md) {
+            digestArr = md.digest(key);
+        }
+        for (byte b : digestArr)
             digest.append(String.format("%02x", b & 0xFF));
         return shards.floorEntry(digest.toString()).getValue();
     }
