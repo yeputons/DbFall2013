@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
  * Time: 0:50
  * To change this template use File | Settings | File Templates.
  */
-public class ShardingTest {
+public class ShardingTest extends AbstractStressTest {
     List<ShardingNode> nodes;
     List<Thread> nodeThreads;
     ShardingConfiguration configuration;
@@ -77,45 +77,19 @@ public class ShardingTest {
             throw new RuntimeException("Got errors in some of the node threads");
     }
 
-    private ByteBuffer genByteBuffer(Random rnd) {
-        int len = 1 + rnd.nextInt(9);
-        byte[] res = new byte[len];
-        rnd.nextBytes(res);
-        return ByteBuffer.wrap(res);
-    }
-
     @Test
-    @Ignore
     public void stressTest() throws IOException {
         Router engine = new Router(configuration);
         Map<ByteBuffer, ByteBuffer> real = new HashMap<ByteBuffer, ByteBuffer>();
 
         Random rnd = new Random();
+        // 350 iterations only because we need to check equality
+        // after each iteration (hence, quadratic complexity appears)
         for (int step = 0; step < 350; step++) {
-            int operation = rnd.nextInt(100);
-            if (operation < 50) {
-                ByteBuffer key = genByteBuffer(rnd);
-                ByteBuffer value = genByteBuffer(rnd);
-                engine.put(key, value);
-                real.put(key, value);
-            } else if (operation < 75 && real.size() > 0) {
-                Set<ByteBuffer> keys = real.keySet();
-                int id = rnd.nextInt(keys.size());
-                for (ByteBuffer key : keys)
-                    if (id-- == 0) {
-                        engine.remove(key);
-                        real.remove(key);
-                        break;
-                    }
-            } else if (operation < 100) {
-                ByteBuffer key = genByteBuffer(rnd);
-                engine.remove(key);
-                real.remove(key);
-            }
-
-            /*for (Map.Entry<ByteBuffer, ByteBuffer> entry : real.entrySet()) {
+            performRandomOperation(rnd, engine, real);
+            for (Map.Entry<ByteBuffer, ByteBuffer> entry : real.entrySet()) {
                 assertEquals(entry.getValue(), engine.get(entry.getKey()));
-            }*/
+            }
         }
     }
 
@@ -127,8 +101,13 @@ public class ShardingTest {
                 @Override
                 public void run() {
                     try {
-                        stressTest();
-                    } catch (IOException e) {
+                        Router engine = new Router(configuration);
+                        Map<ByteBuffer, ByteBuffer> real = new HashMap<ByteBuffer, ByteBuffer>();
+                        Random rnd = new Random();
+                        // Here we don't check anything, so 4000 iterations will run in linear time
+                        for (int step = 0; step < 4000; step++)
+                            performRandomOperation(rnd, engine, real);
+                    } catch (Exception e) {
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                         threadFailed = true;
                     }

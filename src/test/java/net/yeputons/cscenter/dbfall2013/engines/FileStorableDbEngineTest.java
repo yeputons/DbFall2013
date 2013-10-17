@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNotSame;
  * Time: 22:43
  * To change this template use File | Settings | File Templates.
  */
-public abstract class FileStorableDbEngineTest {
+public abstract class FileStorableDbEngineTest extends AbstractStressTest {
     protected File storage;
 
     public FileStorableDbEngineTest() throws IOException {
@@ -28,13 +28,6 @@ public abstract class FileStorableDbEngineTest {
     }
 
     protected abstract FileStorableDbEngine createEngine() throws IOException;
-
-    private ByteBuffer genByteBuffer(Random rnd) {
-        int len = 1 + rnd.nextInt(9);
-        byte[] res = new byte[len];
-        rnd.nextBytes(res);
-        return ByteBuffer.wrap(res);
-    }
 
     @Test
     public void stressTest() throws IOException {
@@ -49,27 +42,7 @@ public abstract class FileStorableDbEngineTest {
                 engine = createEngine();
                 assertEquals(real, engine);
             }
-
-            int operation = rnd.nextInt(100);
-            if (operation < 50) {
-                ByteBuffer key = genByteBuffer(rnd);
-                ByteBuffer value = genByteBuffer(rnd);
-                engine.put(key, value);
-                real.put(key, value);
-            } else if (operation < 75 && real.size() > 0) {
-                Set<ByteBuffer> keys = real.keySet();
-                int id = rnd.nextInt(keys.size());
-                for (ByteBuffer key : keys)
-                    if (id-- == 0) {
-                        engine.remove(key);
-                        real.remove(key);
-                        break;
-                    }
-            } else if (operation < 100) {
-                ByteBuffer key = genByteBuffer(rnd);
-                engine.remove(key);
-                real.remove(key);
-            }
+            performRandomOperation(rnd, engine, real);
 
             assertEquals(engine.size(), engine.keySet().size());
             assertEquals(engine.size(), engine.entrySet().size());
