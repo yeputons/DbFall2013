@@ -1,9 +1,9 @@
 package net.yeputons.cscenter.dbfall2013.scaling;
 
 import net.yeputons.cscenter.dbfall2013.engines.SimpleEngine;
+import net.yeputons.cscenter.dbfall2013.util.DataInputStream;
+import net.yeputons.cscenter.dbfall2013.util.DataOutputStream;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -77,17 +77,12 @@ public class Router extends SimpleEngine implements AutoCloseable {
         try {
             ShardConnection c = getConnection(key.array());
             c.out.write("get".getBytes());
-            c.out.writeInt(key.limit());
-            c.out.write(key.array());
+            c.out.writeArray(key.array());
 
             c.readOk();
-            int len = c.in.readInt();
-            if (len == -1) return null;
 
-            byte[] value = new byte[len];
-            c.in.readFully(value);
-
-            return ByteBuffer.wrap(value);
+            byte[] value = c.in.readArray();
+            return value == null ? null : ByteBuffer.wrap(value);
         } catch (RouterCommunicationException | IOException e) {
             closeConnection(key.array());
             throw new RouterCommunicationException(e);
@@ -99,10 +94,8 @@ public class Router extends SimpleEngine implements AutoCloseable {
         try {
             ShardConnection c = getConnection(key.array());
             c.out.write("put".getBytes());
-            c.out.writeInt(value.limit());
-            c.out.write(value.array());
-            c.out.writeInt(key.limit());
-            c.out.write(key.array());
+            c.out.writeArray(value.array());
+            c.out.writeArray(key.array());
             c.readOk();
         } catch (RouterCommunicationException | IOException e) {
             closeConnection(key.array());
@@ -117,8 +110,7 @@ public class Router extends SimpleEngine implements AutoCloseable {
         try {
             ShardConnection c = getConnection(key.array());
             c.out.write("del".getBytes());
-            c.out.writeInt(key.limit());
-            c.out.write(key.array());
+            c.out.writeArray(key.array());
             c.readOk();
         } catch (IOException e) {
             closeConnection(key.array());
@@ -170,10 +162,7 @@ public class Router extends SimpleEngine implements AutoCloseable {
                 c.readOk();
                 int count = c.in.readInt();
                 while (count --> 0) {
-                    int keyLen = c.in.readInt();
-                    byte[] key = new byte[keyLen];
-                    c.in.readFully(key);
-                    res.add(ByteBuffer.wrap(key));
+                    res.add(ByteBuffer.wrap(c.in.readArray()));
                 }
             } catch (RouterCommunicationException | IOException e) {
                 closeConnection(shard.getValue());
@@ -193,13 +182,8 @@ public class Router extends SimpleEngine implements AutoCloseable {
                 c.readOk();
                 int count = c.in.readInt();
                 while (count --> 0) {
-                    int keyLen = c.in.readInt();
-                    byte[] key = new byte[keyLen];
-                    c.in.readFully(key);
-
-                    int valueLen = c.in.readInt();
-                    byte[] value = new byte[valueLen];
-                    c.in.readFully(value);
+                    byte[] key = c.in.readArray();
+                    byte[] value = c.in.readArray();
                     res.add(new AbstractMap.SimpleEntry<ByteBuffer, ByteBuffer>(
                             ByteBuffer.wrap(key),
                             ByteBuffer.wrap(value)

@@ -3,8 +3,12 @@ package net.yeputons.cscenter.dbfall2013.scaling;
 import net.yeputons.cscenter.dbfall2013.engines.hashtrie.HashTrieEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.yeputons.cscenter.dbfall2013.util.DataInputStream;
+import net.yeputons.cscenter.dbfall2013.util.DataOutputStream;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -24,22 +28,6 @@ import java.util.Set;
  */
 public class ShardingNode {
     static final Logger log = LoggerFactory.getLogger(ShardingNode.class);
-
-    private static byte[] readBytes(DataInputStream in) throws IOException {
-        int len = in.readInt();
-        if (len == -1) return null;
-        byte[] res = new byte[len];
-        in.readFully(res);
-        return res;
-    }
-    private static void writeBytes(DataOutputStream out, byte[] data) throws IOException {
-        if (data == null) {
-            out.writeInt(-1);
-        } else {
-            out.writeInt(data.length);
-            out.write(data);
-        }
-    }
 
     HashTrieEngine engine;
     protected void processClient(Socket clientSocket) throws Exception {
@@ -62,45 +50,45 @@ public class ShardingNode {
                 }
                 out.writeInt(siz);
             } else if (Arrays.equals(cmd, "del".getBytes())) {
-                byte[] key = readBytes(in);
+                byte[] key = in.readArray();
                 synchronized (engine) {
                     engine.remove(ByteBuffer.wrap(key));
                 }
                 out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "put".getBytes())) {
-                byte[] value = readBytes(in);
-                byte[] key = readBytes(in);
+                byte[] value = in.readArray();
+                byte[] key = in.readArray();
                 synchronized (engine) {
                     engine.put(ByteBuffer.wrap(key), ByteBuffer.wrap(value));
                 }
                 out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "get".getBytes())) {
-                byte[] key = readBytes(in);
+                byte[] key = in.readArray();
                 ByteBuffer res;
                 synchronized (engine) {
                     res = engine.get(ByteBuffer.wrap(key));
                 }
                 out.write("ok".getBytes());
-                writeBytes(out, res == null ? null : res.array());
+                out.writeArray(res == null ? null : res.array());
             } else if (Arrays.equals(cmd, "key".getBytes())) {
                 out.write("ok".getBytes());
                 synchronized (engine) {
                     out.writeInt(engine.size());
                     for (ByteBuffer key : engine.keySet())
-                        writeBytes(out, key.array());
+                        out.writeArray(key.array());
                 }
             } else if (Arrays.equals(cmd, "its".getBytes())) {
                 out.write("ok".getBytes());
                 synchronized (engine) {
                     out.writeInt(engine.size());
                     for (Map.Entry<ByteBuffer, ByteBuffer> entry : engine.entrySet()) {
-                        writeBytes(out, entry.getKey().array());
-                        writeBytes(out, entry.getValue().array());
+                        out.writeArray(entry.getKey().array());
+                        out.writeArray(entry.getValue().array());
                     }
                 }
             } else {
                 out.write("no".getBytes());
-                writeBytes(out, "Invalid command".getBytes());
+                out.writeArray("Invalid command".getBytes());
             }
             out.flush();
         }
