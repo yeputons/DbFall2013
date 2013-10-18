@@ -8,6 +8,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +27,8 @@ import static org.junit.Assert.assertEquals;
  * To change this template use File | Settings | File Templates.
  */
 public class ShardingTest extends AbstractStressTest {
+    static final Logger log = LoggerFactory.getLogger(ShardingTest.class);
+
     List<ShardingNode> nodes;
     List<Thread> nodeThreads;
     ShardingConfiguration configuration;
@@ -36,6 +40,7 @@ public class ShardingTest extends AbstractStressTest {
     public void setUp() throws Exception {
         threadFailed = false;
 
+        log.info("Starting shards...");
         configuration = new ShardingConfiguration();
         nodes = new ArrayList<ShardingNode>();
         nodeThreads = new ArrayList<Thread>();
@@ -49,13 +54,15 @@ public class ShardingTest extends AbstractStressTest {
 
             final ShardingNode node = new ShardingNode();
             final int port_ = port;
+            final int start_ = start;
             Thread th = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    log.info("Shard for {} is starting on port {}", start_, port_);
                     try {
                         node.run(File.createTempFile("sharding", ".trie"), InetAddress.getByName("localhost"), port_);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        log.error("Exception is caught in node thread", e);
                         threadFailed = true;
                     }
                 }
@@ -65,16 +72,19 @@ public class ShardingTest extends AbstractStressTest {
             th.start();
             port++;
         }
+        log.info("Shards were started.");
     }
 
     @After
     public void tearDown() throws InterruptedException {
+        log.info("Stopping shards...");
         for (ShardingNode node : nodes)
             node.stop();
         for (Thread th : nodeThreads)
             th.join();
         if (threadFailed)
-            throw new RuntimeException("Got errors in some of the node threads");
+            throw new RuntimeException("Got errors in some of the threads");
+        log.info("Shards have been stopped");
     }
 
     @Test
@@ -96,9 +106,11 @@ public class ShardingTest extends AbstractStressTest {
     public void multithreadedStressTest() throws IOException, InterruptedException {
         List<Thread> ths = new ArrayList<Thread>();
         for (int i = 0; i < 10; i++) {
+            final int id = i;
             Thread th = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    log.info("Stress thread is running", id);
                     try {
                         Router engine = new Router(configuration);
                         Map<ByteBuffer, ByteBuffer> real = new HashMap<ByteBuffer, ByteBuffer>();
@@ -107,9 +119,10 @@ public class ShardingTest extends AbstractStressTest {
                         for (int step = 0; step < 4000; step++)
                             performRandomOperation(rnd, engine, real);
                     } catch (Exception e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        log.error("Exception is caught in stress thread", e);
                         threadFailed = true;
                     }
+                    log.info("Stress thread has done its work");
                 }
             });
             th.start();
