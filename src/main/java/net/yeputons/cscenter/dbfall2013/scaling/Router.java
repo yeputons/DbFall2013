@@ -47,7 +47,7 @@ public class Router extends SimpleEngine implements AutoCloseable {
     protected ShardConnection getConnection(ShardDescription shard) throws IOException {
         ShardConnection conn = connections.get(shard);
         if (conn == null) {
-            conn = new ShardConnection(shard.openSocket());
+            conn = new ShardConnection(shard.openRwSocket());
             connections.put(shard, conn);
         }
         return conn;

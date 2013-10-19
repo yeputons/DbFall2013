@@ -3,12 +3,25 @@
 # where host can be either hostname, or IPv4, or IPv6 (in fact,
 # everything that the 'Uri' class can process)
 # Default port is 33131 (hardcoded in ShardingConfiguration.java)
+#
+# First replica is considered as 'master', the rest are 'slaves'
+# Master has full copy of data, slave can have slightly outdated version.
+# You cannot write to slaves, only master can push changes to them.
+# All writes go straight to master
 sharding:
   - startHash: "00"
-    address: localhost:23917
+    replicas:
+      - 127.0.0.1:23917
+      - 127.0.0.1:23921
   - startHash: "40"
-    address: localhost:23918
+    replicas:
+      - localhost:23918
+      - 127.0.0.1:23922
   - startHash: "80"
-    address: localhost:23919
+    replicas:
+      - localhost:23919
+      - 127.0.0.1:23923
   - startHash: "C0"
-    address: localhost:23920
+    replicas:
+      - localhost:23920
+      - 127.0.0.1:23924

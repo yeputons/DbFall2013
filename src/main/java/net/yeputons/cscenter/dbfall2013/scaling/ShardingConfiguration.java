@@ -62,11 +62,13 @@ public class ShardingConfiguration {
             startHash = startHash.toLowerCase();
 
             ShardDescription item = new ShardDescription();
-            URI uri = new URI("my://" + (String) node.get("address"));
-            item.address = new InetSocketAddress(
-                    uri.getHost() == null ? "localhost" : uri.getHost(),
-                    uri.getPort() < 0 ? DEFAULT_PORT : uri.getPort()
-            );
+            for (Object _replica : (List) node.get("replicas")) {
+                URI uri = new URI("my://" + (String) _replica);
+                item.replicas.add(new InetSocketAddress(
+                        uri.getHost() == null ? "localhost" : uri.getHost(),
+                        uri.getPort() < 0 ? DEFAULT_PORT : uri.getPort()
+                ));
+            }
             shards.put(startHash, item);
         }
 

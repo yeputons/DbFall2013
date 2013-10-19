@@ -6,7 +6,6 @@ import net.yeputons.cscenter.dbfall2013.scaling.ShardingConfiguration;
 import net.yeputons.cscenter.dbfall2013.scaling.ShardingNode;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +45,8 @@ public class ShardingTest extends AbstractStressTest {
         nodeThreads = new ArrayList<Thread>();
         int port = ShardingConfiguration.DEFAULT_PORT;
         for (int start = 0; start < 256; start += 64) {
-            ShardDescription item = new ShardDescription();
-            item.host = "localhost";
-            item.port = port;
+            final ShardDescription item = new ShardDescription();
+            item.replicas.add(new InetSocketAddress(InetAddress.getLocalHost(), port));
             String startHash = String.format("%02x", start);
             configuration.shards.put(startHash, item);
 
@@ -60,7 +58,7 @@ public class ShardingTest extends AbstractStressTest {
                 public void run() {
                     log.info("Shard for {} is starting on port {}", start_, port_);
                     try {
-                        node.run(File.createTempFile("sharding", ".trie"), InetAddress.getByName("localhost"), port_);
+                        node.run(File.createTempFile("sharding", ".trie"), item.replicas.get(0));
                     } catch (Exception e) {
                         log.error("Exception is caught in node thread", e);
                         threadFailed = true;

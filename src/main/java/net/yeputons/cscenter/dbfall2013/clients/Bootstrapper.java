@@ -5,7 +5,7 @@ import net.yeputons.cscenter.dbfall2013.scaling.ShardingConfiguration;
 import net.yeputons.cscenter.dbfall2013.scaling.ShardingNode;
 
 import java.io.File;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -44,19 +44,22 @@ public class Bootstrapper {
             conf.readFromFile(f);
 
             for (Map.Entry<String, ShardDescription> entry : conf.shards.entrySet()) {
-                final File storage = new File("storage-shard-" + entry.getKey() + ".trie");
                 final ShardDescription descr = entry.getValue();
                 final ShardingNode node = new ShardingNode();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            node.run(storage, InetAddress.getByName(descr.host), descr.port);
-                        } catch (Exception e) {
-                            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                for (InetSocketAddress addr : descr.replicas) {
+                    final InetSocketAddress addr_ = addr;
+                    final File storage = new File("storage-shard-" + entry.getKey() + "-" + addr_.hashCode() + ".trie");
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                node.run(storage, addr_);
+                            } catch (Exception e) {
+                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                            }
                         }
-                    }
-                }).start();
+                    }).start();
+                }
             }
         }
     }

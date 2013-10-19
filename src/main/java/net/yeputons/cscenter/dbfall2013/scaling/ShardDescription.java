@@ -2,18 +2,29 @@ package net.yeputons.cscenter.dbfall2013.scaling;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class ShardDescription {
-    public String host;
-    public int port;
+    protected static Random random = new Random();
+    public List<InetSocketAddress> replicas;
 
-    public Socket openSocket() throws IOException {
-        return new Socket(host, port);
+    public Socket openRwSocket() throws IOException {
+        return new Socket(replicas.get(0).getAddress(), replicas.get(0).getPort());
+    }
+    public Socket openReadSocket() throws IOException {
+        int id = random.nextInt(replicas.size());
+        return new Socket(replicas.get(id).getAddress(), replicas.get(id).getPort());
+    }
+
+    public ShardDescription() {
+        replicas = new ArrayList<InetSocketAddress>();
     }
 
     @Override
     public int hashCode() {
-        return host.hashCode() * 239017 + port;
+        return replicas.hashCode();
     }
 
     @Override
@@ -23,6 +34,6 @@ public class ShardDescription {
         if (!(obj instanceof ShardDescription))
             return false;
         ShardDescription desc = (ShardDescription)obj;
-        return host.equals(desc.host) && port == desc.port;
+        return replicas.equals(desc.replicas);
     }
 }
