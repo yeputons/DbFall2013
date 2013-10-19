@@ -1,3 +1,7 @@
 target/
 .idea
 *.iml
+*.sh
+*.cmd
+*.trie
+dependency-reduced-pom.xml
