@@ -31,7 +31,7 @@ public class Router extends SimpleEngine implements AutoCloseable {
             byte[] res = new byte[2];
             in.readFully(res);
             if (!Arrays.equals(res, "ok".getBytes())) {
-                throw new RuntimeException("Server returned an unknown status: " + new String(res));
+                throw new RouterCommunicationException("Server returned an unknown status: " + new String(res));
             }
         }
     }
@@ -55,6 +55,21 @@ public class Router extends SimpleEngine implements AutoCloseable {
     protected ShardConnection getConnection(byte[] key) throws IOException {
         return getConnection(conf.getShard(key));
     }
+    protected void closeConnection(ShardDescription shard) {
+        ShardConnection conn = connections.get(shard);
+        if (conn != null) {
+            try {
+                conn.in.close();
+                conn.out.close();
+                conn.s.close();
+            } catch (IOException e) {
+            }
+            connections.remove(shard);
+        }
+    }
+    protected void closeConnection(byte[] key) {
+        closeConnection(conf.getShard(key));
+    }
 
     @Override
     public ByteBuffer get(Object _key) {
@@ -73,8 +88,9 @@ public class Router extends SimpleEngine implements AutoCloseable {
             c.in.readFully(value);
 
             return ByteBuffer.wrap(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (RouterCommunicationException | IOException e) {
+            closeConnection(key.array());
+            throw new RouterCommunicationException(e);
         }
     }
 
@@ -88,8 +104,9 @@ public class Router extends SimpleEngine implements AutoCloseable {
             c.out.writeInt(key.limit());
             c.out.write(key.array());
             c.readOk();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (RouterCommunicationException | IOException e) {
+            closeConnection(key.array());
+            throw new RouterCommunicationException(e);
         }
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -104,7 +121,8 @@ public class Router extends SimpleEngine implements AutoCloseable {
             c.out.write(key.array());
             c.readOk();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            closeConnection(key.array());
+            throw new RouterCommunicationException(e);
         }
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -117,8 +135,9 @@ public class Router extends SimpleEngine implements AutoCloseable {
                 ShardConnection c = getConnection(shard.getValue());
                 c.out.write("clr".getBytes());
                 c.readOk();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (RouterCommunicationException | IOException e) {
+                closeConnection(shard.getValue());
+                throw new RouterCommunicationException(e);
             }
         }
     }
@@ -133,8 +152,9 @@ public class Router extends SimpleEngine implements AutoCloseable {
                 c.readOk();
                 int res = c.in.readInt();
                 sum += res;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (RouterCommunicationException | IOException e) {
+                closeConnection(shard.getValue());
+                throw new RouterCommunicationException(e);
             }
         }
         return sum;
@@ -155,8 +175,9 @@ public class Router extends SimpleEngine implements AutoCloseable {
                     c.in.readFully(key);
                     res.add(ByteBuffer.wrap(key));
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (RouterCommunicationException | IOException e) {
+                closeConnection(shard.getValue());
+                throw new RouterCommunicationException(e);
             }
         }
         return res;
@@ -184,8 +205,9 @@ public class Router extends SimpleEngine implements AutoCloseable {
                             ByteBuffer.wrap(value)
                     ));
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (RouterCommunicationException | IOException e) {
+                closeConnection(shard.getValue());
+                throw new RouterCommunicationException(e);
             }
         }
         return res;

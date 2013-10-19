@@ -2,9 +2,11 @@ package net.yeputons.cscenter.dbfall2013.clients;
 
 import net.yeputons.cscenter.dbfall2013.engines.hashtrie.HashTrieEngine;
 import net.yeputons.cscenter.dbfall2013.scaling.Router;
+import net.yeputons.cscenter.dbfall2013.scaling.RouterCommunicationException;
 import net.yeputons.cscenter.dbfall2013.scaling.ShardingConfiguration;
 
 import java.io.File;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -88,43 +90,55 @@ public class ConsoleClient {
             }
             if (line.isEmpty()) continue;
 
+
             if (line.equals("quit")) {
                 break;
             } else if (line.equals("help")) {
                 showHelp();
-            } else if (line.equals("clear")) {
-                engine.clear();
-            } else if (line.equals("size")) {
-                System.out.println(engine.size());
-            } else if (line.equals("keys")) {
-                if (engine.size() <= 20) {
-                    for (ByteBuffer key : engine.keySet()) {
-                        String s = new String(key.array());
-                        System.out.println(s);
-                    }
-                } else {
-                    System.out.println("ERROR: more than 20 keys, won't print them");
-                }
-            } else {
-                String[] tokens = line.split(" ");
-                if (tokens[0].equals("put") && tokens.length == 3) {
-                    ByteBuffer key = parseArgument(tokens[1]);
-                    ByteBuffer value = parseArgument(tokens[2]);
-                    engine.put(key, value);
-                } else if (tokens[0].equals("get") && tokens.length == 2) {
-                    ByteBuffer key = parseArgument(tokens[1]);
-                    ByteBuffer value = engine.get(key);
-                    if (value == null) {
-                        System.out.println("ERROR: Such key is not presented in DB");
+                continue;
+            }
+
+            try {
+                if (line.equals("clear")) {
+                    engine.clear();
+                } else if (line.equals("size")) {
+                    System.out.println(engine.size());
+                } else if (line.equals("keys")) {
+                    if (engine.size() <= 20) {
+                        for (ByteBuffer key : engine.keySet()) {
+                            String s = new String(key.array());
+                            System.out.println(s);
+                        }
                     } else {
-                        System.out.println(new String(value.array()));
+                        System.out.println("ERROR: more than 20 keys, won't print them");
                     }
-                } else if (tokens[0].equals("del") && tokens.length == 2) {
-                    ByteBuffer key = parseArgument(tokens[1]);
-                    engine.remove(key);
                 } else {
-                    System.out.println("Invalid command. Try again or type 'help' for help");
+                    String[] tokens = line.split(" ");
+                    if (tokens[0].equals("put") && tokens.length == 3) {
+                        ByteBuffer key = parseArgument(tokens[1]);
+                        ByteBuffer value = parseArgument(tokens[2]);
+                        engine.put(key, value);
+                    } else if (tokens[0].equals("get") && tokens.length == 2) {
+                        ByteBuffer key = parseArgument(tokens[1]);
+                        ByteBuffer value = engine.get(key);
+                        if (value == null) {
+                            System.out.println("ERROR: Such key is not presented in DB");
+                        } else {
+                            System.out.println(new String(value.array()));
+                        }
+                    } else if (tokens[0].equals("del") && tokens.length == 2) {
+                        ByteBuffer key = parseArgument(tokens[1]);
+                        engine.remove(key);
+                    } else {
+                        System.out.println("Invalid command. Try again or type 'help' for help");
+                    }
                 }
+            } catch (RouterCommunicationException e) {
+                Throwable cause = e.getCause();
+                System.out.printf("ERROR: unable to communicate with node (%s was caught, %s)\n",
+                        cause.getClass().toString(),
+                        cause.getMessage()
+                );
             }
         }
         in.close();
