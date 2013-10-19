@@ -1,6 +1,8 @@
 package net.yeputons.cscenter.dbfall2013.scaling;
 
 import net.yeputons.cscenter.dbfall2013.engines.hashtrie.HashTrieEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -21,6 +23,8 @@ import java.util.Set;
  * To change this template use File | Settings | File Templates.
  */
 public class ShardingNode {
+    static final Logger log = LoggerFactory.getLogger(ShardingNode.class);
+
     private static byte[] readBytes(DataInputStream in) throws IOException {
         int len = in.readInt();
         if (len == -1) return null;
@@ -107,15 +111,18 @@ public class ShardingNode {
     protected volatile boolean isRunning;
 
     public void run(File storage, InetAddress bindTo, int port) throws Exception {
+        log.info("Starting node on {}:{}, please be patient...", bindTo, port);
         isRunning = true;
         engine = new HashTrieEngine(storage);
         serverSocket = new ServerSocket(port, 0, bindTo);
 
         clients = new HashSet<Socket>();
 
+        log.info("Node is up and ready to accept connections");
         while (true) {
             try {
                 final Socket clientSocket = serverSocket.accept();
+                log.debug("New client from {}:{} connected", clientSocket.getInetAddress(), clientSocket.getPort());
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -138,6 +145,8 @@ public class ShardingNode {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
+                        log.debug("Client from {}:{} disconnected", clientSocket.getInetAddress(), clientSocket.getPort());
+
                         try {
                             clientSocket.close();
                         } catch (SocketException e) {
@@ -154,14 +163,17 @@ public class ShardingNode {
             }
             if (!isRunning) break;
         }
+        log.info("Terminating connections...");
         synchronized (clients) {
             for (Socket s : clients)
                 s.close();
         }
         serverSocket.close();
+        log.info("Terminating engine...");
         synchronized (engine) {
             engine.close();
         }
+        log.info("Node is down");
     }
     public void stop() {
         isRunning = false;
