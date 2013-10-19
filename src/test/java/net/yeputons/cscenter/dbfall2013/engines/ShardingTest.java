@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -46,9 +47,8 @@ public class ShardingTest extends AbstractStressTest {
         nodeThreads = new ArrayList<Thread>();
         int port = ShardingConfiguration.DEFAULT_PORT;
         for (int start = 0; start < 256; start += 64) {
-            ShardDescription item = new ShardDescription();
-            item.host = "localhost";
-            item.port = port;
+            final ShardDescription item = new ShardDescription();
+            item.address = new InetSocketAddress(InetAddress.getLocalHost(), port);
             String startHash = String.format("%02x", start);
             configuration.shards.put(startHash, item);
 
@@ -60,7 +60,7 @@ public class ShardingTest extends AbstractStressTest {
                 public void run() {
                     log.info("Shard for {} is starting on port {}", start_, port_);
                     try {
-                        node.run(File.createTempFile("sharding", ".trie"), InetAddress.getByName("localhost"), port_);
+                        node.run(File.createTempFile("sharding", ".trie"), item.address);
                     } catch (Exception e) {
                         log.error("Exception is caught in node thread", e);
                         threadFailed = true;

@@ -9,10 +9,7 @@ import net.yeputons.cscenter.dbfall2013.util.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -98,11 +95,11 @@ public class ShardingNode {
     protected ServerSocket serverSocket;
     protected volatile boolean isRunning;
 
-    public void run(File storage, InetAddress bindTo, int port) throws Exception {
-        log.info("Starting node on {}:{}, please be patient...", bindTo, port);
+    public void run(File storage, InetSocketAddress bindTo) throws Exception {
+        log.info("Starting node on {}, please be patient...", bindTo);
         isRunning = true;
         engine = new HashTrieEngine(storage);
-        serverSocket = new ServerSocket(port, 0, bindTo);
+        serverSocket = new ServerSocket(bindTo.getPort(), 0, bindTo.getAddress());
 
         clients = new HashSet<Socket>();
 
@@ -180,6 +177,6 @@ public class ShardingNode {
         }
         String host = args[1];
         int port = Integer.parseInt(args[2]);
-        new ShardingNode().run(new File(args[0]), InetAddress.getByName(host), port);
+        new ShardingNode().run(new File(args[0]), new InetSocketAddress(host, port));
     }
 }

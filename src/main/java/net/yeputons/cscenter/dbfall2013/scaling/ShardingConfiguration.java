@@ -1,10 +1,13 @@
 package net.yeputons.cscenter.dbfall2013.scaling;
 
+import com.sun.jndi.toolkit.url.Uri;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -48,7 +51,7 @@ public class ShardingConfiguration {
         return shards.floorEntry(digest.toString()).getValue();
     }
 
-    public void readFromFile(File f) throws FileNotFoundException {
+    public void readFromFile(File f) throws FileNotFoundException, MalformedURLException {
         shards = new TreeMap<String, ShardDescription>();
         Yaml yaml = new Yaml();
         Map data = (Map)yaml.load(new FileInputStream(f));
@@ -59,10 +62,11 @@ public class ShardingConfiguration {
             startHash = startHash.toLowerCase();
 
             ShardDescription item = new ShardDescription();
-            item.host = (String) node.get("host");
-            item.port = (Integer) node.get("port");
-            if (item.host == "") item.host = "localhost";
-            if (item.port == 0) item.port = DEFAULT_PORT;
+            Uri uri = new Uri("my://" + (String) node.get("address"));
+            item.address = new InetSocketAddress(
+                    uri.getHost() == null ? "localhost" : uri.getHost(),
+                    uri.getPort() < 0 ? DEFAULT_PORT : uri.getPort()
+            );
             shards.put(startHash, item);
         }
 

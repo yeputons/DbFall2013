@@ -1,19 +1,19 @@
 package net.yeputons.cscenter.dbfall2013.scaling;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class ShardDescription {
-    public String host;
-    public int port;
+    public InetSocketAddress address;
 
     public Socket openSocket() throws IOException {
-        return new Socket(host, port);
+        return new Socket(address.getAddress(), address.getPort());
     }
 
     @Override
     public int hashCode() {
-        return host.hashCode() * 239017 + port;
+        return address.hashCode();
     }
 
     @Override
@@ -23,6 +23,6 @@ public class ShardDescription {
         if (!(obj instanceof ShardDescription))
             return false;
         ShardDescription desc = (ShardDescription)obj;
-        return host.equals(desc.host) && port == desc.port;
+        return address.equals(desc.address);
     }
 }

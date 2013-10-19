@@ -51,7 +51,7 @@ public class Bootstrapper {
                     @Override
                     public void run() {
                         try {
-                            node.run(storage, InetAddress.getByName(descr.host), descr.port);
+                            node.run(storage, descr.address);
                         } catch (Exception e) {
                             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                         }
