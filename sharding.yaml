@@ -1,15 +1,14 @@
 # Remember to enclose hashes in quotes to avoid casting to integer
-# You should specify address in [host][:port] format,
+# You should specify address in host[:port] format,
 # where host can be either hostname, or IPv4, or IPv6 (in fact,
 # everything that the 'Uri' class can process)
-# Default host is localhost, default port is 33131 (hardcoded in
-# ShardingConfiguration.java)
+# Default port is 33131 (hardcoded in ShardingConfiguration.java)
 sharding:
   - startHash: "00"
-    address: 127.0.0.1:23917
+    address: localhost:23917
   - startHash: "40"
     address: localhost:23918
   - startHash: "80"
-    address: :23919
+    address: localhost:23919
   - startHash: "C0"
-    address: :23920
+    address: localhost:23920

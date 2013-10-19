@@ -7,7 +7,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -51,7 +52,7 @@ public class ShardingConfiguration {
         return shards.floorEntry(digest.toString()).getValue();
     }
 
-    public void readFromFile(File f) throws FileNotFoundException, MalformedURLException {
+    public void readFromFile(File f) throws FileNotFoundException, URISyntaxException {
         shards = new TreeMap<String, ShardDescription>();
         Yaml yaml = new Yaml();
         Map data = (Map)yaml.load(new FileInputStream(f));
@@ -62,7 +63,7 @@ public class ShardingConfiguration {
             startHash = startHash.toLowerCase();
 
             ShardDescription item = new ShardDescription();
-            Uri uri = new Uri("my://" + (String) node.get("address"));
+            URI uri = new URI("my://" + (String) node.get("address"));
             item.address = new InetSocketAddress(
                     uri.getHost() == null ? "localhost" : uri.getHost(),
                     uri.getPort() < 0 ? DEFAULT_PORT : uri.getPort()
