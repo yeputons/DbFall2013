@@ -173,6 +173,7 @@ public class ShardingNode {
         synchronized (engine) {
             engine.close();
         }
+        isRunning = false;
         log.info("Node is down");
     }
     public void stop() {
