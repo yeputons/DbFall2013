@@ -8,10 +8,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,7 +17,7 @@ import java.util.Set;
  * Time: 20:59
  * To change this template use File | Settings | File Templates.
  */
-public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine {
+public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine, Iterable<Map.Entry<ByteBuffer, ByteBuffer>> {
     protected File storage;
     protected RandomAccessFile dataFile;
     protected HugeMappedFile data;
@@ -30,10 +27,10 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     protected final int MD_LEN = 160 / 8;
     protected int currentSize;
 
-    protected final long SIGNATURE_OFFSET = 0;
-    protected final byte[] SIGNATURE = { 'Y', 'D', 'B', 2 };
-    protected final long USED_LENGTH_OFFSET = 4;
-    protected final long ROOT_NODE_OFFSET = 12;
+    protected static final long SIGNATURE_OFFSET = 0;
+    protected static final byte[] SIGNATURE = { 'Y', 'D', 'B', 2 };
+    protected static final long USED_LENGTH_OFFSET = 4;
+    protected static final long ROOT_NODE_OFFSET = 12;
 
     protected int calcSize(long offset) throws IOException {
         TrieNode node = TrieNode.createFromFile(data, offset);
@@ -113,30 +110,24 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         }
     }
 
-    private void keySet(long ptr, Set<ByteBuffer> keySet) throws IOException {
-        TrieNode node = TrieNode.createFromFile(data, ptr);
-        if (node instanceof LeafNode) {
-            LeafNode leaf = (LeafNode)node;
-            if (leaf.value == null) return;
-            keySet.add(leaf.key);
-            return;
-        }
-
-        InnerNode inner = (InnerNode)node;
-        for (int i = 0; i < inner.next.length; i++)
-            if (inner.next[i] != 0)
-                keySet(inner.next[i], keySet);
-    }
-
     @Override
     public Set<ByteBuffer> keySet() {
         Set<ByteBuffer> keySet = new HashSet<ByteBuffer>();
-        try {
-            keySet(ROOT_NODE_OFFSET, keySet);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        for (Entry<ByteBuffer, ByteBuffer> entry : this.entryIterable())
+            keySet.add(entry.getKey());
         return keySet;
+    }
+
+    @Override
+    public Set<Entry<ByteBuffer, ByteBuffer>> entrySet() {
+        Set<Entry<ByteBuffer, ByteBuffer>> entrySet = new HashSet<Entry<ByteBuffer, ByteBuffer>>();
+        for (Entry<ByteBuffer, ByteBuffer> entry : this.entryIterable())
+            entrySet.add(entry);
+        return entrySet;
+    }
+
+    public Iterable<Entry<ByteBuffer, ByteBuffer>> entryIterable() {
+        return this;
     }
 
     @Override
@@ -297,6 +288,15 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             throw new RuntimeException(e);
         } catch (NoSuchElementException e) {
             return null;
+        }
+    }
+
+    @Override
+    public Iterator<Entry<ByteBuffer, ByteBuffer>> iterator() {
+        try {
+            return new HashTrieIterator(data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
