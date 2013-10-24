@@ -42,15 +42,20 @@ public class HashTrieIterator implements Iterator<Map.Entry<ByteBuffer, ByteBuff
             TrieNode chi = TrieNode.createFromFile(data, n.next[c]);
             curv.push(chi);
             curpar.push(c + 1);
+            c = 0;
         }
     }
     protected void findNext() throws IOException {
-        while (curv.empty() || !(curv.peek() instanceof LeafNode) || !(((LeafNode)curv.peek()).value == null))
+        for (;;) {
             findNextLeaf();
+            if (curv.empty()) break;
+            if (curv.peek() instanceof LeafNode && ((LeafNode)curv.peek()).value != null)
+                break;
+        }
     }
 
     HashTrieIterator(HugeMappedFile data_) throws IOException {
-        data_ = data_;
+        data = data_;
         curv = new Stack<TrieNode>();
         curv.add(TrieNode.createFromFile(data, HashTrieEngine.ROOT_NODE_OFFSET));
 
@@ -72,7 +77,6 @@ public class HashTrieIterator implements Iterator<Map.Entry<ByteBuffer, ByteBuff
             throw new NoSuchElementException();
         try {
             last = (LeafNode)curv.peek();
-            assert last instanceof LeafNode;
             findNext();
             return new AbstractMap.SimpleEntry<ByteBuffer, ByteBuffer>(last.key, last.value);
         } catch (IOException e) {
