@@ -5,7 +5,6 @@ import net.yeputons.cscenter.dbfall2013.scaling.ShardingConfiguration;
 import net.yeputons.cscenter.dbfall2013.scaling.ShardingNode;
 
 import java.io.File;
-import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -30,6 +29,8 @@ public class Bootstrapper {
             ConsoleClient.main(Arrays.copyOfRange(args, 1, args.length));
         } else if (args[0].equals("node")) {
             ShardingNode.main(Arrays.copyOfRange(args, 1, args.length));
+        } else if (args[0].equals("manager")) {
+            ClusterManager.main(Arrays.copyOfRange(args, 1, args.length));
         } else if (args[0].equals("all_nodes")) {
             if (args.length > 1) {
                 System.err.println(
