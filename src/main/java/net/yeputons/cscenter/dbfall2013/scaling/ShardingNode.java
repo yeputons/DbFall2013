@@ -26,7 +26,9 @@ import java.util.Set;
 public class ShardingNode {
     static final Logger log = LoggerFactory.getLogger(ShardingNode.class);
 
+    File storage;
     HashTrieEngine engine;
+
     protected void processClient(Socket clientSocket) throws Exception {
         DataInputStream in = new DataInputStream(clientSocket.getInputStream());
         DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
@@ -83,6 +85,8 @@ public class ShardingNode {
                         out.writeArray(entry.getValue().array());
                     }
                 }
+            } else if (Arrays.equals(cmd, "pak".getBytes())) {
+                runCompaction();
             } else {
                 out.write("no".getBytes());
                 out.writeArray("Invalid command".getBytes());
@@ -91,11 +95,26 @@ public class ShardingNode {
         }
     }
 
+    private void runCompaction() throws IOException {
+        synchronized (engine) {
+            File tempStorage = File.createTempFile("compaction", ".trie");
+            HashTrieEngine tempEngine = new HashTrieEngine(tempStorage);
+            for (Map.Entry<ByteBuffer, ByteBuffer> entry : engine)
+                tempEngine.put(entry.getKey(), entry.getValue());
+            engine.close();
+            storage.delete();
+            tempStorage.renameTo(storage);
+            engine.reopen();
+        }
+    }
+
     Set<Socket> clients;
     protected ServerSocket serverSocket;
     protected volatile boolean isRunning;
 
-    public void run(File storage, InetSocketAddress bindTo) throws Exception {
+    public void run(File storage_, InetSocketAddress bindTo) throws Exception {
+        storage = storage_;
+
         log.info("Starting node on {}, please be patient...", bindTo);
         isRunning = true;
         engine = new HashTrieEngine(storage);
