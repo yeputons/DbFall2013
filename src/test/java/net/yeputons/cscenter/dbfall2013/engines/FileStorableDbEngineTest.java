@@ -46,6 +46,8 @@ public abstract class FileStorableDbEngineTest extends AbstractStressTest {
 
             assertEquals(engine.size(), engine.keySet().size());
             assertEquals(engine.size(), engine.entrySet().size());
+            assertEquals(real.keySet(), engine.keySet());
+            assertEquals(real.entrySet(), engine.entrySet());
             assertEquals(real, engine);
         }
     }
