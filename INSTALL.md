@@ -8,7 +8,7 @@ If you don't have either of them, just add '@org.junit.Ignore' before public cla
 
 If you think you're ready, run the following commands from the root directory of this project:
 1. mvn package
-   This command should finish with 'BUILD SUCCESS' message. 23 tests should be run.
+   This command should finish with 'BUILD SUCCESS' message. 24 tests should be run.
    If you don't want tests to be run at all, add '-Dmaven.test.skip=true' to the command line
 2. cd target
 3. java -jar net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar <arguments>
