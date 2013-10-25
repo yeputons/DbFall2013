@@ -35,9 +35,15 @@ public class ShardingNode {
             in.readFully(cmd);
             if (Arrays.equals(cmd, "clr".getBytes())) {
                 synchronized (engine) {
-                    engine.clear();
+                    try {
+                        engine.clear();
+                        out.write("ok".getBytes());
+                    } catch (IllegalStateException e) {
+                        String message = "Illegal state: " + e.getCause();
+                        out.write("no".getBytes());
+                        out.writeArray(message.getBytes());
+                    }
                 }
-                out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "siz".getBytes())) {
                 out.write("ok".getBytes());
                 int siz;
@@ -69,26 +75,41 @@ public class ShardingNode {
             } else if (Arrays.equals(cmd, "hi!".getBytes())) {
                 out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "key".getBytes())) {
-                out.write("ok".getBytes());
                 synchronized (engine) {
-                    out.writeInt(engine.size());
-                    for (ByteBuffer key : engine.keySet())
-                        out.writeArray(key.array());
+                    if (engine.isCompactionInProgress()) {
+                        out.write("no".getBytes());
+                        out.writeArray("Compaction is in progress".getBytes());
+                    } else {
+                        out.write("ok".getBytes());
+                        out.writeInt(engine.size());
+                        for (Map.Entry<ByteBuffer, ByteBuffer> key : engine)
+                            out.writeArray(key.getKey().array());
+                    }
                 }
             } else if (Arrays.equals(cmd, "its".getBytes())) {
-                out.write("ok".getBytes());
                 synchronized (engine) {
-                    out.writeInt(engine.size());
-                    for (Map.Entry<ByteBuffer, ByteBuffer> entry : engine.entrySet()) {
-                        out.writeArray(entry.getKey().array());
-                        out.writeArray(entry.getValue().array());
+                    if (engine.isCompactionInProgress()) {
+                        out.write("no".getBytes());
+                        out.writeArray("Compaction is in progress".getBytes());
+                    } else {
+                        out.write("ok".getBytes());
+                        out.writeInt(engine.size());
+                        for (Map.Entry<ByteBuffer, ByteBuffer> entry : engine.entrySet()) {
+                            out.writeArray(entry.getKey().array());
+                            out.writeArray(entry.getValue().array());
+                        }
                     }
                 }
             } else if (Arrays.equals(cmd, "pak".getBytes())) {
                 synchronized (engine) {
-                    engine.runCompaction();
+                    if (engine.isCompactionInProgress()) {
+                        out.write("no".getBytes());
+                        out.writeArray("Compaction is in progress".getBytes());
+                    } else {
+                        engine.runCompaction();
+                        out.write("ok".getBytes());
+                    }
                 }
-                out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "dwn".getBytes())) {
                 out.write("ok".getBytes());
                 this.stop();
