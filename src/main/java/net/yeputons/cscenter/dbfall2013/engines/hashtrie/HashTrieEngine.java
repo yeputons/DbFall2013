@@ -307,7 +307,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     @Override
     public Iterator<Entry<ByteBuffer, ByteBuffer>> iterator() {
         try {
-            return new HashTrieIterator(data);
+            return new HashTrieIterator(this);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

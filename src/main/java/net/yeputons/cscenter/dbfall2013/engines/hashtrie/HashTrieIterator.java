@@ -14,7 +14,7 @@ import java.util.*;
  * To change this template use File | Settings | File Templates.
  */
 public class HashTrieIterator implements Iterator<Map.Entry<ByteBuffer, ByteBuffer>> {
-    HugeMappedFile data;
+    HashTrieEngine engine;
     Stack<TrieNode> curv;
     Stack<Integer> curpar;
     LeafNode last;
@@ -27,6 +27,9 @@ public class HashTrieIterator implements Iterator<Map.Entry<ByteBuffer, ByteBuff
         }
 
         while (!curv.empty() && !(curv.peek() instanceof LeafNode)) {
+            long offset = curv.pop().offset;
+            curv.push(TrieNode.createFromFile(engine.data, offset));
+
             InnerNode n = (InnerNode)curv.peek();
             if (c == 256) {
                 curv.pop();
@@ -39,7 +42,7 @@ public class HashTrieIterator implements Iterator<Map.Entry<ByteBuffer, ByteBuff
             }
 
             assert n.next[c] > 0;
-            TrieNode chi = TrieNode.createFromFile(data, n.next[c]);
+            TrieNode chi = TrieNode.createFromFile(engine.data, n.next[c]);
             curv.push(chi);
             curpar.push(c + 1);
             c = 0;
@@ -49,15 +52,19 @@ public class HashTrieIterator implements Iterator<Map.Entry<ByteBuffer, ByteBuff
         for (;;) {
             findNextLeaf();
             if (curv.empty()) break;
-            if (curv.peek() instanceof LeafNode && ((LeafNode)curv.peek()).value != null)
-                break;
+            if (curv.peek() instanceof LeafNode) {
+                long offset = curv.pop().offset;
+                curv.push(TrieNode.createFromFile(engine.data, offset));
+                if (((LeafNode)curv.peek()).value != null)
+                    break;
+            }
         }
     }
 
-    HashTrieIterator(HugeMappedFile data_) throws IOException {
-        data = data_;
+    HashTrieIterator(HashTrieEngine engine_) throws IOException {
+        engine = engine_;
         curv = new Stack<TrieNode>();
-        curv.add(TrieNode.createFromFile(data, HashTrieEngine.ROOT_NODE_OFFSET));
+        curv.add(TrieNode.createFromFile(engine.data, HashTrieEngine.ROOT_NODE_OFFSET));
 
         curpar = new Stack<Integer>();
         curpar.add(-1);
