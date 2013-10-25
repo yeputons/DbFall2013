@@ -11,10 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -89,6 +86,7 @@ public class ShardingNode {
                 }
             } else if (Arrays.equals(cmd, "pak".getBytes())) {
                 runCompaction();
+                out.write("ok".getBytes());
             } else {
                 out.write("no".getBytes());
                 out.writeArray("Invalid command".getBytes());
@@ -101,11 +99,34 @@ public class ShardingNode {
         synchronized (engine) {
             File tempStorage = File.createTempFile("compaction", ".trie");
             HashTrieEngine tempEngine = new HashTrieEngine(tempStorage);
-            for (Map.Entry<ByteBuffer, ByteBuffer> entry : engine)
-                tempEngine.put(entry.getKey(), entry.getValue());
+            {
+                // We are unable to use for (a : b) here because
+                // we need iterator to be garbage collected to fully close
+                // the engine and done the unmapping.
+                // Looks like local variables are marked as unused only after
+                // method's end. We don't have any way to explicitly remove
+                // iterator of foreach, so we use hand-written code here
+                // (you can use one more method, too)
+                Iterator<Map.Entry<ByteBuffer, ByteBuffer> > it = engine.iterator();
+                while (it.hasNext()) {
+                    Map.Entry<ByteBuffer, ByteBuffer> entry = it.next();
+                    tempEngine.put(entry.getKey(), entry.getValue());
+                }
+                it = null;
+            }
             engine.close();
-            storage.delete();
-            tempStorage.renameTo(storage);
+            tempEngine.close();
+            System.gc();
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            if (!storage.delete()) {
+                throw new RuntimeException("Unable to delete old storage");
+            }
+            if (!tempStorage.renameTo(storage)) {
+                throw new RuntimeException("Unable to move new storage over the old");
+            }
             engine.reopen();
         }
     }
