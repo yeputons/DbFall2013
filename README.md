@@ -113,3 +113,18 @@ First byte of each node's specification is its type:
    goes itself, then key's length (int32), then the key.
 
 Content of the unused part of storage is undefined and is not used.
+
+## Misc algorithms
+
+### Compaction algorithm of HashTrieEngine
+
+First of all, HashTrieEngine is not thread-safe. It excepts for lock on `this` to be set during all
+operations (all calls should be wrapped in `synchronized (engine)`).
+
+Then, when you need compaction to be run, start runCompaction() in a separate thread. It will move
+engine to compaction mode. It means that size(), get(), put() and remove() calls work as expected, behavior of
+the rest is undefined. For example, entrySet() can return old entry set. `compactionLock` together with `compactionInProgress`
+are used to enter and exit compaction mode.
+
+During the compaction, a new data file is created, all entries from the old one are moved, then all deferred modifications are applied.
+After that, default data file is replaced with the temporary one.
