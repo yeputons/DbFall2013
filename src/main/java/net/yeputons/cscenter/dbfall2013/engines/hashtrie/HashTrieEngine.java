@@ -3,7 +3,6 @@ package net.yeputons.cscenter.dbfall2013.engines.hashtrie;
 import net.yeputons.cscenter.dbfall2013.engines.FileStorableDbEngine;
 import net.yeputons.cscenter.dbfall2013.engines.SimpleEngine;
 import net.yeputons.cscenter.dbfall2013.util.HugeMappedFile;
-import sun.plugin.dom.exception.InvalidStateException;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -102,7 +101,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
 
     public void reopen() throws IOException {
         if (data != null)
-            throw new InvalidStateException("Engine should be closed before reopening");
+            throw new IllegalStateException("Engine should be closed before reopening");
         openStorage();
     }
 
