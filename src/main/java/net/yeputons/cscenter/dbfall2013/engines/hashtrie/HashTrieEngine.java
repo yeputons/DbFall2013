@@ -33,6 +33,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
 
     protected Object compactionLock = new Object();
     protected volatile boolean compactionInProgress = false;
+    protected volatile Map<ByteBuffer, ByteBuffer> modificationsDuringCompaction;
 
     protected static final long SIGNATURE_OFFSET = 0;
     protected static final byte[] SIGNATURE = { 'Y', 'D', 'B', 2 };
@@ -114,6 +115,11 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
 
     @Override
     public void clear() {
+        synchronized (compactionLock) {
+            if (compactionInProgress)
+                throw new IllegalStateException("Compaction is in progress. Please wait and try again");
+        }
+
         try {
             flush();
             resetStorage();
@@ -186,6 +192,12 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         if (size() == 0) return null;
         ByteBuffer key = (ByteBuffer)_key;
 
+        synchronized (compactionLock) {
+            if (compactionInProgress && modificationsDuringCompaction.containsKey(_key)) {
+                return modificationsDuringCompaction.get(_key);
+            }
+        }
+
         try {
             LeafNode leaf = getNode(key);
             return leaf.value;
@@ -198,6 +210,22 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     public ByteBuffer put(ByteBuffer key, ByteBuffer value) {
         if (key == null || value == null)
             throw new NullPointerException("key and value should not be nulls");
+
+        synchronized (compactionLock) {
+            if (compactionInProgress) {
+                ByteBuffer oldValue = null;
+                try {
+                    oldValue = getNode(key).value;
+                } catch (NoSuchElementException e) {
+                }
+                if (modificationsDuringCompaction.containsKey(key)) {
+                    oldValue = modificationsDuringCompaction.get(key);
+                }
+                if (oldValue == null) currentSize++;
+                modificationsDuringCompaction.put(key, value);
+                return oldValue;
+            }
+        }
 
         byte[] hash = md.digest(key.array());
         assert hash.length == MD_LEN;
@@ -291,6 +319,22 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     @Override
     public ByteBuffer remove(Object _key) {
         ByteBuffer key = (ByteBuffer)_key;
+        synchronized (compactionLock) {
+            if (compactionInProgress) {
+                ByteBuffer oldValue = null;
+                try {
+                    oldValue = getNode(key).value;
+                } catch (NoSuchElementException e) {
+                }
+                if (modificationsDuringCompaction.containsKey(key)) {
+                    oldValue = modificationsDuringCompaction.get(key);
+                }
+                if (oldValue != null) currentSize--;
+                modificationsDuringCompaction.put(key, null);
+                return oldValue;
+            }
+        }
+
         try {
             LeafNode leaf = getNode(key);
             ByteBuffer oldValue = leaf.value;
@@ -313,11 +357,17 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
         }
     }
 
+    public boolean isCompactionInProgress() {
+        synchronized (compactionLock) {
+            return compactionInProgress;
+        }
+    }
     public void runCompaction() throws IOException {
         synchronized (compactionLock) {
             if (compactionInProgress)
                 throw new IllegalStateException("Another compaction is in progress");
             compactionInProgress = true;
+            modificationsDuringCompaction = new HashMap<ByteBuffer, ByteBuffer>();
         }
 
         log.info("Compaction was started.");
@@ -351,8 +401,16 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             }
             it = null;
         }
-        log.debug("Closing both old and temporary storages...");
         synchronized (this) {
+            log.debug("Applying {} pending modifications...", modificationsDuringCompaction.size());
+            for (Entry<ByteBuffer, ByteBuffer> entry : modificationsDuringCompaction.entrySet()) {
+                if (entry.getValue() == null)
+                    tempEngine.remove(entry.getKey());
+                else
+                    tempEngine.put(entry.getKey(), entry.getValue());
+            }
+
+            log.debug("Closing both old and temporary storages...");
             this.close();
             tempEngine.close();
             System.gc();
@@ -369,13 +427,17 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             }
             log.debug("Reopening compacted storage...");
             this.reopen();
-        }
-        long newSize = dataUsedLength, newFileSize = dataFile.length();
-        log.info("Compaction is finished. Used data: from {} to {}, file size: from {} to {}",
-                oldSize, newSize,
-                oldFileSize, newFileSize
-                );
 
-        compactionInProgress = false;
+            long newSize = dataUsedLength, newFileSize = dataFile.length();
+            log.info("Compaction is finished. Used data: from {} to {}, file size: from {} to {}",
+                    oldSize, newSize,
+                    oldFileSize, newFileSize
+            );
+
+            synchronized (compactionLock) {
+                compactionInProgress = false;
+                modificationsDuringCompaction = null;
+            }
+        }
     }
 }
