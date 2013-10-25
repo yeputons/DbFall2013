@@ -28,6 +28,8 @@ public abstract class FileStorableDbEngineTest extends AbstractStressTest {
     }
 
     protected abstract FileStorableDbEngine createEngine() throws IOException;
+    protected void performRandomReload(Random rnd, FileStorableDbEngine engine) throws IOException {
+    }
 
     @Test
     public void stressTest() throws IOException {
@@ -37,6 +39,7 @@ public abstract class FileStorableDbEngineTest extends AbstractStressTest {
 
         Random rnd = new Random();
         for (int step = 0; step < 500; step++) {
+            performRandomReload(rnd, engine);
             if (rnd.nextInt(100) <= 30) {
                 engine.close();
                 engine = createEngine();
