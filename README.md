@@ -49,6 +49,9 @@ by an array (encoded as above), specifying human-readable error message (in ASCI
 4. `put` - key and value follows
 5. `get` - key follows. Returns either array with `length == -1` and no elements, if no such element is presented
    or element's value as array otherwise.
+6. `hi!` - just replies 'ok'. Useful for connection testing
+7. `key` - answers with amount of actual keys (32-bit), followed by them in standard format (length + data bytes)
+8. `its` - answers with amount of actual keys (32-bit), followed by items: key first (length + data), value follows in the same format.
 
 ## Storage engines
 
