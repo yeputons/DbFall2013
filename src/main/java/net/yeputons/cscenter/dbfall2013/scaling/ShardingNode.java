@@ -69,6 +69,8 @@ public class ShardingNode {
                 }
                 out.write("ok".getBytes());
                 out.writeArray(res == null ? null : res.array());
+            } else if (Arrays.equals(cmd, "hi!".getBytes())) {
+                out.write("ok".getBytes());
             } else if (Arrays.equals(cmd, "key".getBytes())) {
                 out.write("ok".getBytes());
                 synchronized (engine) {

@@ -1,6 +1,5 @@
 package net.yeputons.cscenter.dbfall2013.scaling;
 
-import com.sun.jndi.toolkit.url.Uri;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -15,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Created with IntelliJ IDEA.
@@ -52,10 +52,33 @@ public class ShardingConfiguration {
         return shards.floorEntry(digest.toString()).getValue();
     }
 
+    static final String hashChars = "0123456789abcdef";
+    static final int hashLen = 20;
+    protected String getFirstHashGe(String startHash) {
+        String res = "";
+        for (int i = 0; i < hashLen; i++) {
+            boolean found = false;
+            for (int i2 = 0; i2 < hashChars.length(); i2++) {
+                String cand = res + hashChars.charAt(i2);
+                for (int i3 = i + 1; i3 < hashLen; i3++)
+                    cand += hashChars.charAt(0);
+                if (startHash.compareTo(cand) <= 0) {
+                    found = true;
+                    res += hashChars.charAt(i2);
+                    break;
+                }
+            }
+            if (!found) throw new IllegalArgumentException("Unable to found hash >= than '" + startHash + "'");
+        }
+        return res;
+    }
+
     public void readFromFile(File f) throws FileNotFoundException, URISyntaxException {
         shards = new TreeMap<String, ShardDescription>();
         Yaml yaml = new Yaml();
         Map data = (Map)yaml.load(new FileInputStream(f));
+
+        TreeSet<String> startHashes = new TreeSet<String>();
         for (Object _node : (List)data.get("sharding")) {
             Map node = (Map)_node;
 
@@ -68,7 +91,37 @@ public class ShardingConfiguration {
                     uri.getHost() == null ? "localhost" : uri.getHost(),
                     uri.getPort() < 0 ? DEFAULT_PORT : uri.getPort()
             );
+            item.startHash = getFirstHashGe(startHash);
+            if (startHashes.contains(item.startHash))
+                throw new InvalidParameterException("Hash '" + startHash + "' appears as start one at least twice");
+            startHashes.add(item.startHash);
             shards.put(startHash, item);
+        }
+
+        for (Map.Entry<String, ShardDescription> item : shards.entrySet()) {
+            ShardDescription shard = item.getValue();
+            String nextStart = startHashes.higher(shard.startHash);
+            if (nextStart == null) {
+                shard.endHash = "";
+                for (int i = 0; i < hashLen; i++)
+                    shard.endHash += hashChars.charAt(hashChars.length() - 1);
+            } else {
+                char[] result = new char[hashLen];
+                nextStart.getChars(0, hashLen, result, 0);
+                boolean success = false;
+                for (int i = hashLen - 1; i >= 0; i--) {
+                    int curId = hashChars.indexOf(result[i]);
+                    if (curId == 0) {
+                        result[i] = hashChars.charAt(hashChars.length() - 1);
+                    } else {
+                        result[i] = hashChars.charAt(curId - 1);
+                        success = true;
+                        break;
+                    }
+                }
+                assert success;
+                shard.endHash = new String(result);
+            }
         }
 
         final String zeroHash = "00000" + "00000" + "00000" + "00000";

@@ -6,6 +6,7 @@ import java.net.Socket;
 
 public class ShardDescription {
     public InetSocketAddress address;
+    public String startHash, endHash;
 
     public Socket openSocket() throws IOException {
         return new Socket(address.getAddress(), address.getPort());
