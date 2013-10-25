@@ -112,6 +112,16 @@ public class ClusterManager {
     }
 
     protected static void showHelp() {
-        System.out.printf("Not implemented yet\n");
+        System.out.printf(
+                "Available commands (case-sensitive, excess spaces are forbidden):\n" +
+                        "  quit  - closes the manager\n" +
+                        "  help  - displays this help\n" +
+                        "  list_nodes - lists all of the nodes together with their status (online means 'able to connect')\n" +
+                        "Following commands are per-node. They require SHA-1 hash to be specified before the command\n" +
+                        "Node will be determined by the hash.\n" +
+                        "  <hash> say_hi - pings node with 'hi!' command\n" +
+                        "  <hash> shutdown - gracefully terminates the node\n" +
+                        "  <hash> compact - starts compaction process on the node and waits till its finish\n"
+        );
     }
 }
