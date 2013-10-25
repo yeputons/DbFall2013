@@ -31,6 +31,9 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     protected final int MD_LEN = 160 / 8;
     protected int currentSize;
 
+    protected Object compactionLock = new Object();
+    protected volatile boolean compactionInProgress = false;
+
     protected static final long SIGNATURE_OFFSET = 0;
     protected static final byte[] SIGNATURE = { 'Y', 'D', 'B', 2 };
     protected static final long USED_LENGTH_OFFSET = 4;
@@ -311,6 +314,12 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     }
 
     public void runCompaction() throws IOException {
+        synchronized (compactionLock) {
+            if (compactionInProgress)
+                throw new IllegalStateException("Another compaction is in progress");
+            compactionInProgress = true;
+        }
+
         log.info("Compaction was started.");
         long oldSize = dataUsedLength, oldFileSize = dataFile.length();
         log.debug("Creating temporary storage...");
@@ -325,34 +334,48 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             // method's end. We don't have any way to explicitly remove
             // iterator of foreach, so we use hand-written code here
             // (you can use one more method, too)
-            Iterator<Map.Entry<ByteBuffer, ByteBuffer> > it = this.iterator();
-            while (it.hasNext()) {
-                Map.Entry<ByteBuffer, ByteBuffer> entry = it.next();
-                tempEngine.put(entry.getKey(), entry.getValue());
+            Iterator<Map.Entry<ByteBuffer, ByteBuffer> > it;
+            synchronized (this) {
+                it = this.iterator();
+            }
+            for (;;) {
+                Map.Entry<ByteBuffer, ByteBuffer> entry;
+                try {
+                    synchronized (this) {
+                        entry = it.next();
+                    }
+                    tempEngine.put(entry.getKey(), entry.getValue());
+                } catch (NoSuchElementException e) {
+                    break;
+                }
             }
             it = null;
         }
         log.debug("Closing both old and temporary storages...");
-        this.close();
-        tempEngine.close();
-        System.gc();
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
+        synchronized (this) {
+            this.close();
+            tempEngine.close();
+            System.gc();
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            log.debug("Overriding current storage...");
+            if (!storage.delete()) {
+                throw new RuntimeException("Unable to delete old storage");
+            }
+            if (!tempStorage.renameTo(storage)) {
+                throw new RuntimeException("Unable to move new storage over the old");
+            }
+            log.debug("Reopening compacted storage...");
+            this.reopen();
         }
-        log.debug("Overriding current storage...");
-        if (!storage.delete()) {
-            throw new RuntimeException("Unable to delete old storage");
-        }
-        if (!tempStorage.renameTo(storage)) {
-            throw new RuntimeException("Unable to move new storage over the old");
-        }
-        log.debug("Reopening compacted storage...");
-        this.reopen();
         long newSize = dataUsedLength, newFileSize = dataFile.length();
         log.info("Compaction is finished. Used data: from {} to {}, file size: from {} to {}",
                 oldSize, newSize,
                 oldFileSize, newFileSize
                 );
+
+        compactionInProgress = false;
     }
 }
