@@ -87,6 +87,9 @@ public class ShardingNode {
             } else if (Arrays.equals(cmd, "pak".getBytes())) {
                 runCompaction();
                 out.write("ok".getBytes());
+            } else if (Arrays.equals(cmd, "dwn".getBytes())) {
+                out.write("ok".getBytes());
+                this.stop();
             } else {
                 out.write("no".getBytes());
                 out.writeArray("Invalid command".getBytes());

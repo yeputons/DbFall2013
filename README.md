@@ -53,6 +53,7 @@ by an array (encoded as above), specifying human-readable error message (in ASCI
 7. `key` - answers with amount of actual keys (32-bit), followed by them in standard format (length + data bytes)
 8. `its` - answers with amount of actual keys (32-bit), followed by items: key first (length + data), value follows in the same format.
 9. `pak` - starts compacting process. Do not return until the process finishes.
+10. `dwn` - terminates the node gracefully.
 
 ## Storage engines
 

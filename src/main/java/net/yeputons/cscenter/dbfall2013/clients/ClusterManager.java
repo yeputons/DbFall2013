@@ -83,6 +83,8 @@ public class ClusterManager {
                         sout.write("hi!".getBytes());
                     } else if (tokens[1].equals("compact")) {
                         sout.write("pak".getBytes());
+                    } else if (tokens[1].equals("shutdown")) {
+                        sout.write("dwn".getBytes());
                     } else {
                         System.out.printf("ERROR: invalid command '" + tokens[1] + "'\n");
                         s.close();
