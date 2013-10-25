@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Random;
 
@@ -31,15 +32,17 @@ public class HashTrieCompactingTest extends AbstractStressTest {
     }
 
     @Test
-    public void stressTest() throws IOException {
+    public void stressTest() throws IOException, InterruptedException {
         final HashTrieEngine engine = new HashTrieEngine(this.storage);
         Map<ByteBuffer, ByteBuffer> real = new HashMap<ByteBuffer, ByteBuffer>();
         assertEquals(real, engine);
 
+        LinkedList<Thread> threads = new LinkedList<Thread>();
+
         Random rnd = new Random();
         for (int step = 0; step < 500; step++) {
             if (rnd.nextInt(100) <= 1) {
-                new Thread(new Runnable() {
+                Thread th = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -49,7 +52,9 @@ public class HashTrieCompactingTest extends AbstractStressTest {
                         } catch (IllegalStateException e) {
                         }
                     }
-                }).start();
+                });
+                threads.add(th);
+                th.start();
             }
             synchronized (engine) {
                 performRandomOperation(rnd, engine, real);
@@ -60,6 +65,9 @@ public class HashTrieCompactingTest extends AbstractStressTest {
                 assertEquals(real.entrySet(), engine.entrySet());
                 assertEquals(real, engine);
             }
+        }
+        for (Thread th : threads) {
+            th.join();
         }
     }
 }
