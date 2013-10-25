@@ -55,6 +55,18 @@ by an array (encoded as above), specifying human-readable error message (in ASCI
 9. `pak` - starts compacting process. Do not return until the process finishes.
 10. `dwn` - terminates the node gracefully.
 
+## Cluster manager
+
+Manager allows you to control nodes. For example, you can ping a node,
+run a compaction or even terminate a node. Manager uses 'sharding.yaml' file
+in the current directory to get description of the cluster.
+
+To run the manager, type:
+
+~~~~
+java -jar target/net.yeputons.cscenter.dbfall2013-1.0-SNAPSHOT.jar manager
+~~~~
+
 ## Storage engines
 
 No engine supports null keys of values. All of them implements Map<ByteBuffer, ByteBuffer>
