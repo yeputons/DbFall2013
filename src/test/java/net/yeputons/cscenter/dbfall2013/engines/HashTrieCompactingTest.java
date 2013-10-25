@@ -8,10 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -39,6 +36,8 @@ public class HashTrieCompactingTest extends AbstractStressTest {
         Map<ByteBuffer, ByteBuffer> real = new HashMap<ByteBuffer, ByteBuffer>();
         assertEquals(real, engine);
 
+        Set<ByteBuffer> realKeys = new HashSet<ByteBuffer>();
+
         LinkedList<Thread> threads = new LinkedList<Thread>();
         threadException = false;
 
@@ -62,8 +61,12 @@ public class HashTrieCompactingTest extends AbstractStressTest {
             }
             synchronized (engine) {
                 performRandomOperation(rnd, engine, real);
+                for (ByteBuffer entry : real.keySet())
+                    realKeys.add(entry);
 
                 assertEquals(real.size(), engine.size());
+                for (ByteBuffer key : realKeys)
+                    assertEquals(real.get(key), engine.get(key));
                 if (!engine.isCompactionInProgress()) {
                     assertEquals(engine.size(), engine.keySet().size());
                     assertEquals(engine.size(), engine.entrySet().size());
