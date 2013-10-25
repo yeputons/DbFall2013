@@ -81,6 +81,10 @@ public class ClusterManager {
                     DataOutputStream sout = new DataOutputStream(s.getOutputStream());
                     if (tokens[1].equals("say_hi")) {
                         sout.write("hi!".getBytes());
+                    } else {
+                        System.out.printf("ERROR: invalid command '" + tokens[1] + "'\n");
+                        s.close();
+                        continue;
                     }
                     byte[] res = new byte[2];
                     sin.readFully(res);
