@@ -84,6 +84,11 @@ public class HashTrieIterator implements Iterator<Map.Entry<ByteBuffer, ByteBuff
             throw new NoSuchElementException();
         try {
             last = (LeafNode)curv.peek();
+            last = (LeafNode) TrieNode.createFromFile(engine.data, last.offset);
+            if (last.value == null) {
+                findNext();
+                return next();
+            }
             findNext();
             return new AbstractMap.SimpleEntry<ByteBuffer, ByteBuffer>(last.key, last.value);
         } catch (IOException e) {
