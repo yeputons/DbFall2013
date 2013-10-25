@@ -3,6 +3,8 @@ package net.yeputons.cscenter.dbfall2013.engines.hashtrie;
 import net.yeputons.cscenter.dbfall2013.engines.FileStorableDbEngine;
 import net.yeputons.cscenter.dbfall2013.engines.SimpleEngine;
 import net.yeputons.cscenter.dbfall2013.util.HugeMappedFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -18,6 +20,8 @@ import java.util.*;
  * To change this template use File | Settings | File Templates.
  */
 public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine, Iterable<Map.Entry<ByteBuffer, ByteBuffer>> {
+    final Logger log = LoggerFactory.getLogger(HashTrieEngine.class);
+
     protected File storage;
     protected RandomAccessFile dataFile;
     protected HugeMappedFile data;
@@ -307,8 +311,12 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
     }
 
     public void runCompaction() throws IOException {
+        log.info("Compaction was started.");
+        long oldSize = dataUsedLength, oldFileSize = dataFile.length();
+        log.debug("Creating temporary storage...");
         File tempStorage = File.createTempFile("compaction", ".trie");
         HashTrieEngine tempEngine = new HashTrieEngine(tempStorage);
+        log.debug("Filling temporary storage...");
         {
             // We are unable to use for (a : b) here because
             // we need iterator to be garbage collected to fully close
@@ -324,6 +332,7 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             }
             it = null;
         }
+        log.debug("Closing both old and temporary storages...");
         this.close();
         tempEngine.close();
         System.gc();
@@ -331,12 +340,19 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             Thread.sleep(100);
         } catch (InterruptedException e) {
         }
+        log.debug("Overriding current storage...");
         if (!storage.delete()) {
             throw new RuntimeException("Unable to delete old storage");
         }
         if (!tempStorage.renameTo(storage)) {
             throw new RuntimeException("Unable to move new storage over the old");
         }
+        log.debug("Reopening compacted storage...");
         this.reopen();
+        long newSize = dataUsedLength, newFileSize = dataFile.length();
+        log.info("Compaction is finished. Used data: from {} to {}, file size: from {} to {}",
+                oldSize, newSize,
+                oldFileSize, newFileSize
+                );
     }
 }
