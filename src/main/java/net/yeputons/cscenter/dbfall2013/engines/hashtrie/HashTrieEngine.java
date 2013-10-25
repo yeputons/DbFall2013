@@ -305,4 +305,38 @@ public class HashTrieEngine extends SimpleEngine implements FileStorableDbEngine
             throw new RuntimeException(e);
         }
     }
+
+    public void runCompaction() throws IOException {
+        File tempStorage = File.createTempFile("compaction", ".trie");
+        HashTrieEngine tempEngine = new HashTrieEngine(tempStorage);
+        {
+            // We are unable to use for (a : b) here because
+            // we need iterator to be garbage collected to fully close
+            // the engine and done the unmapping.
+            // Looks like local variables are marked as unused only after
+            // method's end. We don't have any way to explicitly remove
+            // iterator of foreach, so we use hand-written code here
+            // (you can use one more method, too)
+            Iterator<Map.Entry<ByteBuffer, ByteBuffer> > it = this.iterator();
+            while (it.hasNext()) {
+                Map.Entry<ByteBuffer, ByteBuffer> entry = it.next();
+                tempEngine.put(entry.getKey(), entry.getValue());
+            }
+            it = null;
+        }
+        this.close();
+        tempEngine.close();
+        System.gc();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+        }
+        if (!storage.delete()) {
+            throw new RuntimeException("Unable to delete old storage");
+        }
+        if (!tempStorage.renameTo(storage)) {
+            throw new RuntimeException("Unable to move new storage over the old");
+        }
+        this.reopen();
+    }
 }
