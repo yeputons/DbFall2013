@@ -31,6 +31,8 @@ public class HashTrieCompactingTest extends AbstractStressTest {
         storage.delete();
     }
 
+    volatile boolean threadException;
+
     @Test
     public void stressTest() throws IOException, InterruptedException {
         final HashTrieEngine engine = new HashTrieEngine(this.storage);
@@ -38,18 +40,20 @@ public class HashTrieCompactingTest extends AbstractStressTest {
         assertEquals(real, engine);
 
         LinkedList<Thread> threads = new LinkedList<Thread>();
+        threadException = false;
 
         Random rnd = new Random();
-        for (int step = 0; step < 500; step++) {
+        for (int step = 0; step < 5000; step++) {
             if (rnd.nextInt(100) <= 1) {
                 Thread th = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
                             engine.runCompaction();
-                        } catch (IOException e) {
-                            e.printStackTrace();
                         } catch (IllegalStateException e) {
+                        } catch (Exception e) {
+                            threadException = true;
+                            log.error("Exception caught in compaction thread", e);
                         }
                     }
                 });
@@ -59,15 +63,20 @@ public class HashTrieCompactingTest extends AbstractStressTest {
             synchronized (engine) {
                 performRandomOperation(rnd, engine, real);
 
-                assertEquals(engine.size(), engine.keySet().size());
-                assertEquals(engine.size(), engine.entrySet().size());
-                assertEquals(real.keySet(), engine.keySet());
-                assertEquals(real.entrySet(), engine.entrySet());
-                assertEquals(real, engine);
+                assertEquals(real.size(), engine.size());
+                if (!engine.isCompactionInProgress()) {
+                    assertEquals(engine.size(), engine.keySet().size());
+                    assertEquals(engine.size(), engine.entrySet().size());
+                    assertEquals(real.keySet(), engine.keySet());
+                    assertEquals(real.entrySet(), engine.entrySet());
+                    assertEquals(real, engine);
+                }
             }
         }
         for (Thread th : threads) {
             th.join();
         }
+        if (threadException)
+            throw new RuntimeException("Some exception was caught in some thread");
     }
 }
